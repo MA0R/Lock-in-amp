@@ -64,10 +64,10 @@ class GPIBThreadF(stuff.WorkerThread):
         self.sh.append(first_line)
 
         self.rm = self.inst_bus.ResourceManager() #one resource manager for this thread
-        eval(self.lcin.create_instrument()) #create lcin in resource manager, before thread start
-        eval(self.meter.create_instrument()) #create meter
-        eval(self.source.create_instrument())
-        eval(self.atten.create_instrument())
+        self.com(self.lcin.create_instrument) #create lcin in resource manager, before thread start
+        self.com(self.meter.create_instrument) #create meter
+        self.com(self.source.create_instrument)
+        self.com(self.atten.create_instrument)
         
         self.start() #important that this is the last statement of initialisation. goes to run()
 
@@ -109,47 +109,15 @@ class GPIBThreadF(stuff.WorkerThread):
 
         self.MadeSafe = True
 
-    def try_command(self, command, error_message, choice, SettleTime):
-        """
-        Uses a try: except structure whenever GPIB is called by 'command' and
-        returns 'error_message' if the try fails. This should give more readable
-        instrument control code by removing the clutter of the try block. The
-        returned gpib needs to be assigned to self.xxx if xxx is to be used later
-        in try_command. choice is either 'ev' for using eval or 'ex' for using exec.
-        exec executes the string as a statement while eval returns a value.
-        In case of a visa failure, calls MakeSafe so if it is possible some instruments will be safe.
-        """
-        try:
-            if choice == 'ev':
-                if self._want_abort:
-                    if self.MadeSafe == False:
-                        self.MakeSafe()
-                    return 0
-                else:
-                    #when reading the instrument, there is no settle time required.
-                    gpib = eval(command)
-                    string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime())) + str(command)
-                    self.PrintSave(string)
-                    return str(gpib)
-            elif choice == 'ex':
-                if self._want_abort:
-                    if self.MadeSafe == False:
-                        self.MakeSafe()
-                    return
-                else:
-                    exec command
-                    time.sleep(SettleTime)
-                    string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime())) + str(command)
-                    self.PrintSave(string)
-                    return
-        except self.inst_bus.VisaIOError:
-            if self.MadeSafe == False:
-                self.MakeSafe()
-            string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()) + error_message)
-            self.PrintSave(string)
-            #wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, None))
-            self._want_abort = 1
-            return
+    def com(self, command,value=None):
+        if not self._want_abort:
+            if value != None:
+                return command(value)
+            else:
+                return command()
+        else:
+            return 0
+
 
     def Error_string_maker(self):
         """
@@ -160,16 +128,16 @@ class GPIBThreadF(stuff.WorkerThread):
         #somehow still prints "0" when the instruments have no error.
         string = " "
         #query instrument errors, and save individual error strings.
-        eval(self.meter.query_error())
-        m_esr = str(eval(self.meter.read_instrument()))
+        self.com(self.meter.query_error)
+        m_esr = str(self.com(self.meter.read_instrument))
         self.PrintSave('meter ESR = '+m_esr)
         if m_esr != self.meter.com['NoError']: string = 'meter: '+m_esr
-        eval(self.source.query_error())
-        s_esr = str(eval(self.source.read_instrument()))
+        self.com(self.source.query_error)
+        s_esr = str(self.com(self.source.read_instrument))
         self.PrintSave('source ESR = '+s_esr)
         if s_esr != self.source.com['NoError']: string = string +' source : '+s_esr
-        eval(self.lcin.query_error())
-        l_esr = str(eval(self.lcin.read_instrument()))
+        self.com(self.lcin.query_error)
+        l_esr = str(self.com(self.lcin.read_instrument))
         self.PrintSave('lcin ESR = '+l_esr)
         if l_esr != self.lcin.com['NoError']: string = string +' lcin: ' +l_esr
 
@@ -183,19 +151,19 @@ class GPIBThreadF(stuff.WorkerThread):
         
         case = int(float(case)) #attenuation col has 1 for setting attenuation
         if case == 0:
-            eval(self.atten.set_value("B123\\\\nB567"))
+            self.com(self.atten.set_value,"B123\\\\nB567")
         elif case == 20:
-            eval(self.atten.set_value("A2B13\\nB567"))
+            self.com(self.atten.set_value,"A2B13\\nB567")
         elif case == 40:
-            eval(self.atten.set_value("A3B12\\nB567"))
+            self.com(self.atten.set_value,"A3B12\\nB567")
         elif case == 60:
-            eval(self.atten.set_value("A23B1\\nB567"))
+            self.com(self.atten.set_value,"A23B1\\nB567")
         elif case == 80:
-            eval(self.atten.set_value("A3B12\\nA7B56"))
+            self.com(self.atten.set_value,"A3B12\\nA7B56")
         elif case == 100:
-            eval(self.atten.set_value("A23B1\\nA7B56"))
+            self.com(self.atten.set_value,"A23B1\\nA7B56")
         elif case == 120:
-            eval(self.atten.set_value("A23B1\\nA67B5"))
+            self.com(self.atten.set_value,"A23B1\\nA67B5")
         else:
             self.PrintSave("No valid attentuation")
 
@@ -203,10 +171,10 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         Function to set the voltage
         """
-        eval(self.source.set_value(self.command(row, self.Freq_col)))
-        eval(self.source.set_value(self.command(row, self.Atten_col)))#but this one wont have the correct header...
-        eval(self.source.set_value(self.command(row, self.VarV_col)))
-        eval(self.source.set_value(self.command(row, self.Phase_col)))
+        self.com(self.source.set_value,self.command(row, self.Freq_col))
+        self.com(self.source.set_value,self.command(row, self.Atten_col))#but this one wont have the correct header...
+        self.com(self.source.set_value,self.command(row, self.VarV_col))
+        self.com(self.source.set_value,self.command(row, self.Phase_col))
 
     def run_swerl(self, row):
         """
@@ -236,8 +204,8 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         read the reserve and range cells, and send with appropriate packaging
         """
-        eval(self.lcin.set_value(self.command(row, self.Reserve_col)))
-        eval(self.lcin.set_value(self.command(row, self.lcin_phase_col)))
+        self.com(self.lcin.set_value, self.command(row, self.Reserve_col))
+        self.com(self.lcin.set_value,self.command(row, self.lcin_phase_col))
         #   WHAT IS THE RANGE THAT IT GETS SENT?
 
     def command(self, row, col):
@@ -256,22 +224,22 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         ####################INITIALISE INSTRUMENTS##########################
 
-        eval(self.lcin.reset_instrument()) #reset lcin
-        eval(self.source.reset_instrument())
-        eval(self.meter.reset_instrument())
+        self.com(self.lcin.reset_instrument) #reset lcin
+        self.com(self.source.reset_instrument)
+        self.com(self.meter.reset_instrument)
         time.sleep(3)
-        eval(self.lcin.initialise_instrument()) #initialise the lcin for reading
-        eval(self.meter.initialise_instrument())
-        eval(self.source.initialise_instrument())
+        self.com(self.lcin.initialise_instrument) #initialise the lcin for reading
+        self.com(self.meter.initialise_instrument)
+        self.com(self.source.initialise_instrument)
         #error string for source?
 
         self.PrintSave('')
-        eval(self.meter.query_error())
-        self.PrintSave('meter ESR = '+str(eval(self.meter.read_instrument())))
-        eval(self.source.query_error())
-        self.PrintSave('source ESR = '+str(eval(self.source.read_instrument())))
-        eval(self.lcin.query_error())
-        self.PrintSave('meter ESR = '+str(eval(self.lcin.read_instrument())))
+        self.com(self.meter.query_error)
+        self.PrintSave('meter ESR = '+str(self.com(self.meter.read_instrument)))
+        self.com(self.source.query_error)
+        self.PrintSave('source ESR = '+str(self.com(self.source.read_instrument)))
+        self.com(self.lcin.query_error())
+        self.PrintSave('meter ESR = '+str(self.com(self.lcin.read_instrument)))
         self.PrintSave('')
 
             ##read all instruments status and print
@@ -297,8 +265,8 @@ class GPIBThreadF(stuff.WorkerThread):
             nordgs = int(float(self.read_grid_cell(row, self.nordgs_col)))
 
             self.set_up_lcin(row)
-            eval(self.source.MeasureSetup())
-            eval(self.lcin.MeasureSetup())
+            self.com(self.source.MeasureSetup)
+            self.com(self.lcin.MeasureSetup)
             x_readings = []
             y_readings = []
             t_readings = []
@@ -307,23 +275,23 @@ class GPIBThreadF(stuff.WorkerThread):
                 #where to add the "if not self.want_abort:"?
                 #idea is to stop the tripple reading from attempting to break up an int,
                 #otherwise python crashes, its not a safe stopping of the program.
-                eval(self.source.SingleMsmntSetup()) #?
-                eval(self.lcin.SingleMsmntSetup())
+                self.com(self.source.SingleMsmntSetup) #?
+                self.com(self.lcin.SingleMsmntSetup)
                 time.sleep(3)
-                tripple_reading = str(eval(self.lcin.read_instrument()))
+                tripple_reading = str(self.com(self.lcin.read_instrument))
                 print(tripple_reading)
                 #x, y, t = tripple_reading.split(",")
                 if not self._want_abort:
-                    x,y,t = str("{},{},{}".format(eval(self.lcin.read_instrument()),eval(self.lcin.read_instrument()),eval(self.lcin.read_instrument()))).split(",")
+                    x,y,t = str("{},{},{}".format(self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrumen))).split(",")
                     #will have to split the row at "," or whatever NEED TO WORK IT OUT
                     x_readings.append(float(x))
                     y_readings.append(float(y))
                     t_readings.append(float(t))
             
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.sr_res_mod_print,self.sr_auto_phas_print]
-            eval(self.lcin.set_value("SENS?;RMOD?;OFLT?;PHAS?\\\\n"))
+            self.com(self.lcin.set_value,"SENS?;RMOD?;OFLT?;PHAS?\\\\n")
             for col in printing_cols:
-                self.set_grid_val(row,col,str(eval(self.lcin.read_instrument())))
+                self.set_grid_val(row,col,str(self.com(self.lcin.read_instrument)))
             
             #the readings would be empty arrays if the program is sent to stop, then the values returned will be "nan".
             self.set_grid_val(row,self.sr_x_print,np.average(x_readings))

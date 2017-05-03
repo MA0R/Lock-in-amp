@@ -299,10 +299,10 @@ class GraphFrame(noname.MyFrame1):
         dm.update({'NoError':eval("'"+dm['NoError']+"'")})
         ds.update({'NoError':eval("'"+ds['NoError']+"'")})
         da.update({'NoError':eval("'"+da['NoError']+"'")})
-        self.lcin = gpib_inst.INSTRUMENT('L', bus=self.LcinAdress.GetValue(), **dl)
-        self.meter = gpib_inst.INSTRUMENT('M', bus=self.MeterAdress.GetValue(), **dm)
-        self.source = gpib_inst.INSTRUMENT('S', bus=self.SourceAdress.GetValue(), **ds)
-        self.atten = gpib_inst.INSTRUMENT('A', bus=self.AttenAdress.GetValue(), **da)
+        self.lcin = gpib_inst.INSTRUMENT(self.inst_bus,'L', bus=self.LcinAdress.GetValue(), **dl)
+        self.meter = gpib_inst.INSTRUMENT(self.inst_bus,'M', bus=self.MeterAdress.GetValue(), **dm)
+        self.source = gpib_inst.INSTRUMENT(self.inst_bus,'S', bus=self.SourceAdress.GetValue(), **ds)
+        self.atten = gpib_inst.INSTRUMENT(self.inst_bus,'A', bus=self.AttenAdress.GetValue(), **da)
 
 
     def OnOverideSafety(self, event):
