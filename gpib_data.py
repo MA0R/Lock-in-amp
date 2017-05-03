@@ -1,5 +1,5 @@
 """
-Everything about GPIB control for the Ref Step algorithm.
+Everything about GPIB control for the lockin calibration algorithm.
 The GUI should only allow one GPIB thread at a time.
 Thread also writes raw data file to an excel sheet.
 Log files are written at event termination from graphframe.py.
@@ -9,9 +9,6 @@ import stuff
 import csv
 import time
 import wx
-import visa #use inst_bus instead of visa so the calling application
-#can provide the simulated (visa2) or real version of visa
-import visa2
 import numpy as np
 import gpib_inst
 import openpyxl
@@ -76,6 +73,7 @@ class GPIBThreadF(stuff.WorkerThread):
         Prints a string, and saves to the log file too.
         """
         if self._want_abort: #stop the pointless printing if the thread wants to abort
+            print("@printsave, wants to abort")
             return
         else:
             self.logfile.write(str(text)+"\n")
@@ -83,39 +81,26 @@ class GPIBThreadF(stuff.WorkerThread):
 
     def MakeSafe(self):
         """
-        MakeSafe executes the make safe commands straight to the instruments,
-        bypassing the try_command structure.
-        Incase it it failed making safe, the Make safe button will turn red
-        (posts "UNSAFE" to the main thread) and state which instruments the make safe failed at.
-        The program only attempts the make safe once and terminates the thread.
+        Should force the make safe commands down the GPIB and then quit? Is it even necessary?
         """
-        if self.MadeSafe == False:
-            sucess = True
-            #executes the make safe sequence on each instrument, bypassing the try_command
-            insts = [self.lcin.com['label'], self.meter.com['label'], self.source.com['label']]
-            #lcin label, meter label, source label
-            safes = [self.lcin.com['MakeSafe'], self.meter.com['MakeSafe'], self.source.com['MakeSafe']]
-            #make ssafe routines for each
-            for l,s in zip(insts, safes):
-                try:
-                    exec('self.'+str(l)+'.write("'+str(s)+'")')
-                except self.inst_bus.VisaIOError:
-                    sucess = False
-                    self.PrintSave("DID NOT SUCESFULLY MAKE "+str(l)+" SAFE")
-            if sucess == False:
-                wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, "UNSAFE"))
-            else:
-                wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, None))
+        pass
 
-        self.MadeSafe = True
-
-    def com(self, command,value=None):
+    def com(self, command,send_item=None):
         if not self._want_abort:
-            if value != None:
-                return command(value)
+            if send_item != None:
+                sucess,val,string = command(send_item)
+                if sucess == False:
+                    self._want_abort = 1
+                self.PrintSave(string)
+                return val
             else:
-                return command()
+                sucess,val,string = command()
+                if sucess == False:
+                    self._want_abort = 1
+                self.PrintSave(string)
+                return val
         else:
+            print("reached com but wants to abort")
             return 0
 
 
@@ -146,10 +131,18 @@ class GPIBThreadF(stuff.WorkerThread):
     def set_attenuation(self, row):
         """
         Attenuation is set here, soon to set the number of readings too?
+        This spreads out the sending of values to instruments, needs to either
+        be part of the dictionaries (which is long and messy) or read from the control
+        table. Alternatively, more commands can be brought in here as this is a specific
+        internal use product.
         """
         case = self.read_grid_cell(row, self.Atten_col)
-        
-        case = int(float(case)) #attenuation col has 1 for setting attenuation
+        try:
+            case = int(float(case)) #attenuation col has 1 for setting attenuation
+        except ValueError:
+            print("invalid case{} at row {}".format(case,row))
+            self._want_abort = 1
+            return
         if case == 0:
             self.com(self.atten.set_value,"B123\\\\nB567")
         elif case == 20:
@@ -180,12 +173,15 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         start the swerlein algorithm, perhaps seperate thread?
         """
-        if int(float(self.read_grid_cell(row, self.MeasRef_col)))==1: #conditions on when to run swerlein, if there is anything in the box
+        if self.read_grid_cell(row, self.MeasRef_col) and not self._want_abort:
+            #conditions on when to run swerlein, if there is anything in the box
+            #and ofcourse if the algorithm is happy to keep running.
             self.swerl = Swerlein.Algorithm(port = 24) #sets the thread running.
             loop = True
             while loop == True:
                 if self.swerl.ready == True:
-                    acdcrms = self.swerl.All_data[0][2] #loop ends here and function returns the acdcrms readings
+                    #loop ends here and function returns the acdcrms readings
+                    acdcrms = self.swerl.All_data[0][2]
                     self.set_grid_val(row,self.ref_v_print,acdcrms)
                     loop = False
                 if self._want_abort:
@@ -231,18 +227,15 @@ class GPIBThreadF(stuff.WorkerThread):
         self.com(self.lcin.initialise_instrument) #initialise the lcin for reading
         self.com(self.meter.initialise_instrument)
         self.com(self.source.initialise_instrument)
-        #error string for source?
 
         self.PrintSave('')
         self.com(self.meter.query_error)
         self.PrintSave('meter ESR = '+str(self.com(self.meter.read_instrument)))
         self.com(self.source.query_error)
         self.PrintSave('source ESR = '+str(self.com(self.source.read_instrument)))
-        self.com(self.lcin.query_error())
+        self.com(self.lcin.query_error)
         self.PrintSave('meter ESR = '+str(self.com(self.lcin.read_instrument)))
         self.PrintSave('')
-
-            ##read all instruments status and print
 
         ######################END of INITIALISATION##########################
 
@@ -257,16 +250,18 @@ class GPIBThreadF(stuff.WorkerThread):
             wx.CallAfter(self.grid.Update)
 
             self.set_attenuation(row)
-
             self.set_voltage_phase(row)
-             
             self.run_swerl(row)
-            #measurement settings, and DVM range setting
-            nordgs = int(float(self.read_grid_cell(row, self.nordgs_col)))
+            
+            nordgs = int(float(self.read_grid_cell(row, self.nordgs_col))) #number of readings
 
             self.set_up_lcin(row)
             self.com(self.source.MeasureSetup)
             self.com(self.lcin.MeasureSetup)
+            #arrays for readings of x,y and theta.
+            #theta used to verify the correct reading order of x and y?
+            #lockin aparantly switches the order randomly.
+            #perhaps solved by clearing the instrument bus?
             x_readings = []
             y_readings = []
             t_readings = []
@@ -279,16 +274,19 @@ class GPIBThreadF(stuff.WorkerThread):
                 self.com(self.lcin.SingleMsmntSetup)
                 time.sleep(3)
                 tripple_reading = str(self.com(self.lcin.read_instrument))
-                print(tripple_reading)
                 #x, y, t = tripple_reading.split(",")
                 if not self._want_abort:
-                    x,y,t = str("{},{},{}".format(self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrumen))).split(",")
-                    #will have to split the row at "," or whatever NEED TO WORK IT OUT
+                    #this line is only used for testing with the virtual visa:
+                    x,y,t = str("{},{},{}".format(self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument))).split(",")
                     x_readings.append(float(x))
                     y_readings.append(float(y))
                     t_readings.append(float(t))
             
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.sr_res_mod_print,self.sr_auto_phas_print]
+            #post reading thing, nor normally present in dictionary. what to do about it?
+            #can be part of the status comand, but that is not the correct repurposing.
+            #would only work because the instrument is capable of returning a list.
+            #This may not always be the case
             self.com(self.lcin.set_value,"SENS?;RMOD?;OFLT?;PHAS?\\\\n")
             for col in printing_cols:
                 self.set_grid_val(row,col,str(self.com(self.lcin.read_instrument)))
