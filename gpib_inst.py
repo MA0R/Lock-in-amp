@@ -56,7 +56,7 @@ class INSTRUMENT(object):
         return [sucess,None,string]
     
     def read_instrument(self):
-        val = '0' #value to be returned
+        val = '0' #value to be returned, string-type like instruments
         sucess = False #did we read sucessfully
         #string to be printed and saved in log file
         string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()))+' reading '+self.label+': ' 

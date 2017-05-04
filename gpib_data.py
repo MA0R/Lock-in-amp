@@ -73,7 +73,6 @@ class GPIBThreadF(stuff.WorkerThread):
         Prints a string, and saves to the log file too.
         """
         if self._want_abort: #stop the pointless printing if the thread wants to abort
-            print("@printsave, wants to abort")
             return
         else:
             self.logfile.write(str(text)+"\n")
@@ -100,7 +99,6 @@ class GPIBThreadF(stuff.WorkerThread):
                 self.PrintSave(string)
                 return val
         else:
-            print("reached com but wants to abort")
             return 0
 
 
@@ -139,8 +137,8 @@ class GPIBThreadF(stuff.WorkerThread):
         case = self.read_grid_cell(row, self.Atten_col)
         try:
             case = int(float(case)) #attenuation col has 1 for setting attenuation
-        except ValueError:
-            print("invalid case{} at row {}".format(case,row))
+        except TypeError:
+            self.PrintSave("invalid case{} at row {}".format(case,row))
             self._want_abort = 1
             return
         if case == 0:
@@ -164,19 +162,27 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         Function to set the voltage
         """
-        self.com(self.source.set_value,self.command(row, self.Freq_col))
-        self.com(self.source.set_value,self.command(row, self.Atten_col))#but this one wont have the correct header...
-        self.com(self.source.set_value,self.command(row, self.VarV_col))
-        self.com(self.source.set_value,self.command(row, self.Phase_col))
+        if not self._want_abort:
+            self.com(self.source.set_value,self.command(row, self.Freq_col))
+            self.com(self.source.set_value,self.command(row, self.Atten_col))#but this one wont have the correct header...
+            self.com(self.source.set_value,self.command(row, self.VarV_col))
+            self.com(self.source.set_value,self.command(row, self.Phase_col))
 
     def run_swerl(self, row):
         """
         start the swerlein algorithm, perhaps seperate thread?
         """
-        if self.read_grid_cell(row, self.MeasRef_col) and not self._want_abort:
+        case = self.read_grid_cell(row, self.MeasRef_col)
+        try:
+            case = int(float(case))
+        except ValueError:
+            self.PrintSave("Could not read row {} reference volt case".format(row))
+            return
+        
+        if case ==1 and not self._want_abort:
             #conditions on when to run swerlein, if there is anything in the box
             #and ofcourse if the algorithm is happy to keep running.
-            self.swerl = Swerlein.Algorithm(port = 24) #sets the thread running.
+            self.swerl = Swerlein.Algorithm(self.inst_bus, port = 24) #sets the thread running.
             loop = True
             while loop == True:
                 if self.swerl.ready == True:
@@ -186,7 +192,6 @@ class GPIBThreadF(stuff.WorkerThread):
                     loop = False
                 if self._want_abort:
                     loop = False
-            print(self.swerl.All_data)
         
     def set_grid_val(self,row,col,data):
         wx.CallAfter(self.grid.SetCellValue, row, col, str(data))
@@ -200,9 +205,10 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         read the reserve and range cells, and send with appropriate packaging
         """
-        self.com(self.lcin.set_value, self.command(row, self.Reserve_col))
-        self.com(self.lcin.set_value,self.command(row, self.lcin_phase_col))
-        #   WHAT IS THE RANGE THAT IT GETS SENT?
+        if not self._want_abort:
+            self.com(self.lcin.set_value, self.command(row, self.Reserve_col))
+            self.com(self.lcin.set_value,self.command(row, self.lcin_phase_col))
+            #   WHAT IS THE RANGE THAT IT GETS SENT?
 
     def command(self, row, col):
         """
@@ -242,6 +248,8 @@ class GPIBThreadF(stuff.WorkerThread):
         ######################MEASUREMENT PROCESS############################
 
         for row in range(self.start_row, self.stop_row + 1):
+            if self._want_abort:
+                break
             #read all the values in the line.
 
             self.PrintSave("Spread sheet row "+str(int(row)+1))
@@ -253,14 +261,20 @@ class GPIBThreadF(stuff.WorkerThread):
             self.set_voltage_phase(row)
             self.run_swerl(row)
             
-            nordgs = int(float(self.read_grid_cell(row, self.nordgs_col))) #number of readings
-
+            nordgs = self.read_grid_cell(row, self.nordgs_col) #number of readings
+            try:
+                nordgs = int(float(nordgs))
+            except TypeError:
+                self._want_abort = 1
+                nordgs = 1 #so it dosent loop, but still needs an integer to play with
+                #could also put an if statement around the for-loop
+                
             self.set_up_lcin(row)
             self.com(self.source.MeasureSetup)
             self.com(self.lcin.MeasureSetup)
             #arrays for readings of x,y and theta.
             #theta used to verify the correct reading order of x and y?
-            #lockin aparantly switches the order randomly.
+            #lockin aparantly switches the order of (x,y) randomly.
             #perhaps solved by clearing the instrument bus?
             x_readings = []
             y_readings = []
@@ -272,15 +286,23 @@ class GPIBThreadF(stuff.WorkerThread):
                 #otherwise python crashes, its not a safe stopping of the program.
                 self.com(self.source.SingleMsmntSetup) #?
                 self.com(self.lcin.SingleMsmntSetup)
-                time.sleep(3)
+                time.sleep(1)
                 tripple_reading = str(self.com(self.lcin.read_instrument))
-                #x, y, t = tripple_reading.split(",")
-                if not self._want_abort:
+                try:
+                    #x, y, t = tripple_reading.split(",")
                     #this line is only used for testing with the virtual visa:
                     x,y,t = str("{},{},{}".format(self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument))).split(",")
-                    x_readings.append(float(x))
-                    y_readings.append(float(y))
-                    t_readings.append(float(t))
+                except ValueError:
+                    selfPrintSave("could not unpack tripple reading: {}, aborting".format(tripple_reading))
+                    self._want_abort = 1
+                    
+                if self._want_abort:
+                    #break the loop if it wants to abort, speed up aborting process
+                    break
+                
+                x_readings.append(float(x))
+                y_readings.append(float(y))
+                t_readings.append(float(t))
             
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.sr_res_mod_print,self.sr_auto_phas_print]
             #post reading thing, nor normally present in dictionary. what to do about it?
@@ -291,16 +313,30 @@ class GPIBThreadF(stuff.WorkerThread):
             for col in printing_cols:
                 self.set_grid_val(row,col,str(self.com(self.lcin.read_instrument)))
             
-            #the readings would be empty arrays if the program is sent to stop, then the values returned will be "nan".
-            self.set_grid_val(row,self.sr_x_print,np.average(x_readings))
-            self.set_grid_val(row,self.sr_x_print+1,np.std(x_readings))
-            self.set_grid_val(row,self.sr_y_print,np.average(y_readings))
-            self.set_grid_val(row,self.sr_y_print+1,np.std(y_readings))
-            self.set_grid_val(row,self.sr_theta_print,"{},{}".format(np.average(t_readings),np.std(t_readings)))
+            #the readings would be empty arrays if the program is sent to stop
+            #so initialise the values of avg and std as strings 'failed'
+            #then if lengths of the arrays are longer than 0, we can compute
+            #and therefore save reasonable (calculatable) numbers
+            x_avg,x_std,y_avg,y_std,t_avg,t_std = ['failed']*6
+            if len(x_readings)>0:
+                x_avg = np.average(x_readings)
+                x_std = np.std(x_readings)
+            if len(y_readings)>0:
+                y_avg = np.average(y_readings)
+                y_std = np.std(y_readings)
+            if len(x_readings)>0:
+                t_avg = np.average(t_readings)
+                t_std = np.std(t_readings)
+                
+            self.set_grid_val(row,self.sr_x_print,x_avg)
+            self.set_grid_val(row,self.sr_x_print+1,x_std)
+            self.set_grid_val(row,self.sr_y_print,y_avg)
+            self.set_grid_val(row,self.sr_y_print+1,y_std)
+            self.set_grid_val(row,self.sr_theta_print,"{},{}".format(t_avg,t_std))
         #unused columns?
         #self.sr_range_print = 19
         #self.time_const_print = 20
+        wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, 'GPIB ended'))
 
-        
         ####################### END of MEASUREMENT PROCESS #####################
 

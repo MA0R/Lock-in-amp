@@ -114,7 +114,7 @@ class WorkerThread(threading.Thread):
         self._want_abort = 1
         
 class SwerleinThread(threading.Thread):
-    def __init__(self,**kwargs):
+    def __init__(self, inst_bus, **kwargs):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self._want_abort = 0

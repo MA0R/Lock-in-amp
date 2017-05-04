@@ -15,8 +15,8 @@ class Algorithm(stuff.SwerleinThread):
     """
     Main algorithm thread
     """
-    def __init__(self,**kwargs):
-        stuff.SwerleinThread.__init__(self,**kwargs)
+    def __init__(self,inst_bus,**kwargs):
+        stuff.SwerleinThread.__init__(self,inst_bus,**kwargs)
         #default settings
         self.info = {'port':22,'harmonics' :6,'name':None,'bursts':6,'readings':1,'time':15,'rng':'AUTO','acdc':True,'ac':False,'mean':False,'time':15,'grid':'','LFREQ':False}
         #update info if kwarg is not empty
@@ -40,7 +40,7 @@ class Algorithm(stuff.SwerleinThread):
         self.print_grid_row(grid_row)
         self.ready = False
         self.All_data = []
-        
+        self.inst_bus = inst_bus
         self.start() #important that this is the last statement of initialisation. goes to run()
 
 
@@ -73,7 +73,7 @@ class Algorithm(stuff.SwerleinThread):
             self.instrument.write('end 2')
             self.instrument.write('DISP OFF, READY')
 
-        rm = visa.ResourceManager()
+        rm = self.inst_bus.ResourceManager()
         self.instrument = rm.open_resource('GPIB0::'+str(self.info['port'])+'::INSTR')
         self.instrument.timeout = 10000
 
