@@ -31,9 +31,10 @@ class GPIBThreadF(stuff.WorkerThread):
         self.source = param[6]
         self.atten = param[7]
 
-        self.VarV_col, self.Phase_col, self.RefV_col, self.MeasRef_col, self.AutoPhase_col, self.Reserve_col, self.Freq_col,\
-        self.Atten_col, self.lcin_phase_col, self.meter_range_col, self.nordgs_col = param[8]
-        #columns to print to:
+        self.VarV_col, self.Phase_col, self.Atten_col, self.MeasRef_col, self.AutoPhase_col, self.Reserve_col, self.Freq_col,\
+        self.VoltRatio_col, self.lcin_phase_col, self.meter_range_col, self.nordgs_col = param[8]
+        #columns to print to: (Yes a lot of columns, but they can be fiddled with individually now?)
+        self.time_print = 12
         self.ref_v_print = 13
         self.sr_x_print = 14
         self.sr_y_print = 16
@@ -331,6 +332,7 @@ class GPIBThreadF(stuff.WorkerThread):
                 t_avg = np.average(t_readings)
                 t_std = np.std(t_readings)
                 
+            self.set_grid_val(row,self.time_print,time.strftime("%Y/%m/%d/ %H:%M:%S", time.localtime()))
             self.set_grid_val(row,self.sr_x_print,x_avg)
             self.set_grid_val(row,self.sr_x_print+1,x_std)
             self.set_grid_val(row,self.sr_y_print,y_avg)

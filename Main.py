@@ -156,7 +156,7 @@ class GraphFrame(noname.MyFrame1):
     def FillGrid(self):
         """
         Loads self.proj_file to the grid. Requires a dictionary sheet named "Dict" and
-        a control sheet named "Sheet 1". Uses tables.TABLES for a excel-to-grid object.
+        a control sheet named "Control". Uses tables.TABLES for a excel-to-grid object.
         Need to change from try-except to a structure that returns a failure if the grid was
         not sucessfully loaded. This would then better pin point errors, since try-except
         simply does the exception if it came to an error. 
