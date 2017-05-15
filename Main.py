@@ -59,7 +59,8 @@ class GraphFrame(noname.MyFrame1):
         self.loaded_dict = False
         self.loaded_ranges = False
         self.OverideSafety = False
-
+        self.controlgrid = tables.TABLES(self)
+        
         col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', '# Repetitions', '# steps', 'X ratio', 'STD', 'Effective DoF', 'M ratio', 'STD', 'Effective DoF']
         for i in range(len(col_names)):
             self.m_grid21.SetColLabelValue(i, col_names[i])
@@ -162,10 +163,10 @@ class GraphFrame(noname.MyFrame1):
         simply does the exception if it came to an error. 
         """
 
-        controlgrid = tables.TABLES(self)
+        
         #note passing self is not ideal, pass the scroll window instead
 
-        self.filled_grid = controlgrid.excel_to_grid(self.proj_file, 'Control', self.m_grid3)
+        self.filled_grid = self.controlgrid.excel_to_grid(self.proj_file, 'Control', self.m_grid3)
         if self.filled_grid == True:
             grid = self.m_grid3
             if int(float(grid.GetCellValue(3, 3))) > int(grid.GetNumberRows()):
@@ -175,22 +176,22 @@ class GraphFrame(noname.MyFrame1):
         else:
             print("no sheet named 'Control' found")
 
-        self.loaded_dict = controlgrid.excel_to_grid(self.proj_file, 'Dict', self.m_grid2)
+        self.loaded_dict = self.controlgrid.excel_to_grid(self.proj_file, 'Dict', self.m_grid2)
         if self.loaded_dict == True:
             col_names = ['Key words', 'Meter', 'Key words', 'Source S', 'Key words', 'Source X']
             for i in range(len(col_names)):
                 self.m_grid2.SetColLabelValue(i, col_names[i])
         else:
             print("no sheet named 'Dict' found, can not run")
-
-        self.loaded_ranges = controlgrid.excel_to_grid(self.proj_file, 'Ranges', self.m_grid21)
-        if self.loaded_ranges == True:
-            col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', \
-            '# Repetitions', '# steps']
-            for i in range(len(col_names)):
-                self.m_grid21.SetColLabelValue(i, col_names[i])
-        else:
-            print("no sheet named 'Ranges' found")
+#not in use
+##        self.loaded_ranges = self.controlgrid.excel_to_grid(self.proj_file, 'Ranges', self.m_grid21)
+##        if self.loaded_ranges == True:
+##            col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', \
+##            '# Repetitions', '# steps']
+##            for i in range(len(col_names)):
+##                self.m_grid21.SetColLabelValue(i, col_names[i])
+##        else:
+##            print("no sheet named 'Ranges' found")
 
     def OnAddRow(self, event):
         self.m_grid21.AppendRows(1, True)
@@ -255,8 +256,8 @@ class GraphFrame(noname.MyFrame1):
         """
         Saves using the tables.TABLES object
         """
-        controlgrid = tables.TABLES(self)
-        controlgrid.grid_to_excel(path, [(self.m_grid3, "Control"), (self.m_grid2, "Dict"), (self.m_grid21, "Ranges")])
+        #not saving "ranges", this is a specific product
+        self.controlgrid.grid_to_excel(path, [(self.m_grid3, "Control"), (self.m_grid2, "Dict")])
 
     def DoReset(self, event):
         """
