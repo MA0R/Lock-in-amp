@@ -201,6 +201,7 @@ class GPIBThreadF(stuff.WorkerThread):
         if not self._want_abort:
             value = self.grid.GetCellValue(row, col)
             return value
+        else: return 0
 
     def set_up_lcin(self, row):
         """
@@ -292,7 +293,7 @@ class GPIBThreadF(stuff.WorkerThread):
                 try:
                     x, y, t = tripple_reading.split(",")
                     #this line is only used for testing with the virtual visa:
-                    #x,y,t = str("{},{},{}".format(self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument),self.com(self.lcin.read_instrument))).split(",")
+                    #x,y,t = str("{},{},{}".format(tripple_reading,tripple_reading,tripple_reading)).split(",")
                 except ValueError:
                     self.PrintSave("could not unpack tripple reading: {}, aborting".format(tripple_reading))
                     self._want_abort = 1
@@ -304,7 +305,7 @@ class GPIBThreadF(stuff.WorkerThread):
                 x_readings.append(float(x))
                 y_readings.append(float(y))
                 t_readings.append(float(t))
-            
+            #printing res_mod twice?
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.sr_res_mod_print,self.sr_auto_phas_print]
             #post reading thing, nor normally present in dictionary. what to do about it?
             #can be part of the status comand, but that is not the correct repurposing.

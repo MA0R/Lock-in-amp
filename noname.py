@@ -84,7 +84,7 @@ class MyFrame1 ( wx.Frame ):
 		gbSizer311.Add( self.MeterAdress, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		SourceAdressChoices = []
-		self.SourceAdress = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::15::INSTR", wx.DefaultPosition, wx.DefaultSize, SourceAdressChoices, 0 )
+		self.SourceAdress = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::4::INSTR", wx.DefaultPosition, wx.DefaultSize, SourceAdressChoices, 0 )
 		gbSizer311.Add( self.SourceAdress, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticText101 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Attenuator", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -92,8 +92,16 @@ class MyFrame1 ( wx.Frame ):
 		gbSizer311.Add( self.m_staticText101, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		AttenAdressChoices = []
-		self.AttenAdress = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::24::INSTR", wx.DefaultPosition, wx.DefaultSize, AttenAdressChoices, 0 )
+		self.AttenAdress = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::1::INSTR", wx.DefaultPosition, wx.DefaultSize, AttenAdressChoices, 0 )
 		gbSizer311.Add( self.AttenAdress, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticText11 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Attenuator2", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText11.Wrap( -1 )
+		gbSizer311.Add( self.m_staticText11, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		AttenAdress2Choices = []
+		self.AttenAdress2 = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::1::INSTR", wx.DefaultPosition, wx.DefaultSize, AttenAdress2Choices, 0 )
+		gbSizer311.Add( self.AttenAdress2, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticText12 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Lock in", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText12.Wrap( -1 )
@@ -102,7 +110,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_button14 = wx.Button( self.m_panel511, wx.ID_ANY, u"Refresh instruments", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer311.Add( self.m_button14, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText13 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"meter", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText13 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Meter", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText13.Wrap( -1 )
 		gbSizer311.Add( self.m_staticText13, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -112,23 +120,23 @@ class MyFrame1 ( wx.Frame ):
 		
 		self.m_staticText121 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Test instruments:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText121.Wrap( -1 )
-		gbSizer311.Add( self.m_staticText121, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer311.Add( self.m_staticText121, wx.GBPosition( 6, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		m_comboBox8Choices = [ u"Meter", u"Stable source (S)", u"To calibrate (X)" ]
+		m_comboBox8Choices = [ u"Lock in", u"Meter", u"Source", u"Attenuator", u"Attenuator2" ]
 		self.m_comboBox8 = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"Select instrument", wx.DefaultPosition, wx.DefaultSize, m_comboBox8Choices, 0 )
-		gbSizer311.Add( self.m_comboBox8, wx.GBPosition( 6, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer311.Add( self.m_comboBox8, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_textCtrl18 = wx.TextCtrl( self.m_panel511, wx.ID_ANY, u"Command", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer311.Add( self.m_textCtrl18, wx.GBPosition( 6, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer311.Add( self.m_textCtrl18, wx.GBPosition( 7, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_textCtrl23 = wx.TextCtrl( self.m_panel511, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 250,100 ), 0 )
-		gbSizer311.Add( self.m_textCtrl23, wx.GBPosition( 7, 0 ), wx.GBSpan( 6, 2 ), wx.ALL, 5 )
+		self.m_textCtrl23 = wx.TextCtrl( self.m_panel511, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 250,100 ), wx.TE_MULTILINE )
+		gbSizer311.Add( self.m_textCtrl23, wx.GBPosition( 8, 0 ), wx.GBSpan( 6, 2 ), wx.ALL, 5 )
 		
 		self.m_button15 = wx.Button( self.m_panel511, wx.ID_ANY, u"Send", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer311.Add( self.m_button15, wx.GBPosition( 6, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer311.Add( self.m_button15, wx.GBPosition( 7, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_button16 = wx.Button( self.m_panel511, wx.ID_ANY, u"Read", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer311.Add( self.m_button16, wx.GBPosition( 6, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer311.Add( self.m_button16, wx.GBPosition( 7, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		self.m_panel511.SetSizer( gbSizer311 )

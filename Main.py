@@ -466,11 +466,13 @@ class GraphFrame(noname.MyFrame1):
             self.MeterAdress.Clear()
             self.SourceAdress.Clear()
             self.AttenAdress.Clear()
+            self.AttenAdress2.Clear()
             for adress in resources:
                 self.LcinAdress.Append(adress)
                 self.MeterAdress.Append(adress)
                 self.SourceAdress.Append(adress)
                 self.AttenAdress.Append(adress)
+                self.AttenAdress2.Append(adress)
 
         except self.inst_bus.VisaIOError:
             resources = "visa error"
@@ -487,8 +489,9 @@ class GraphFrame(noname.MyFrame1):
         """
         Sends a test command to the selected instrument using doSend.
         """
-        name = self.m_comboBox8.GetValue()
-        if instrument == 'Lcin':
+        
+        instrument = self.m_comboBox8.GetValue()
+        if instrument == 'Lock in':
             adress = self.LcinAdress.GetValue()
             self.doOnSend(adress)
         elif instrument == 'Meter':
@@ -497,14 +500,18 @@ class GraphFrame(noname.MyFrame1):
         elif instrument == 'Source':
             adress = self.SourceAdress.GetValue()
             self.doOnSend(adress)
-        elif instrument == 'Atten':
+        elif instrument == 'Attenuator':
             adress = self.AttenAdress.GetValue()
+            self.doOnSend(adress)
+        elif instrument == 'Attenuator2':
+            adress = self.AttenAdress2.GetValue()
             self.doOnSend(adress)
         else:
             self.m_textCtrl23.AppendText('select instrument\n')
 
     def doOnSend(self, adress):
         """ sends the commend to the adress specified, creates a new visa resource manager."""
+
         command = self.m_textCtrl18.GetValue()
         rm = self.inst_bus.ResourceManager()#new Visa
         instrument = rm.open_resource(adress)
@@ -517,7 +524,7 @@ class GraphFrame(noname.MyFrame1):
         Will fail if it finds nothing on the instrument bus.
         """
         instrument = self.m_comboBox8.GetValue()
-        if instrument == 'Lcin':
+        if instrument == 'Lock in':
             adress = self.LcinAdress.GetValue()
             self.doRead(adress)
         elif instrument == 'Meter':
@@ -526,8 +533,11 @@ class GraphFrame(noname.MyFrame1):
         elif instrument == 'Source':
             adress = self.SourceAdress.GetValue()
             self.doRead(adress)
-        elif instrument == 'Atten':
+        elif instrument == 'Attenuator':
             adress = self.AttenAdress.GetValue()
+            self.doRead(adress)
+        elif instrument == 'Attenuator2':
+            adress = self.AttenAdress2.GetValue()
             self.doRead(adress)
         else:
             self.m_textCtrl23.AppendText('select instrument\n')

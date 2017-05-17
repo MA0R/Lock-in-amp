@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 This module is about extracting information from Excel to display in
 a wxGrid using openpyxl. Can only read xlsx files.
 Formulas are read as text and then saved as formulas again.
+Need to consider using read_only and write_only in workbooks, for memory considerations.
 """
 
 class TABLES(object):
@@ -16,17 +17,25 @@ class TABLES(object):
     """
     def __init__(self, other_self):
         self.other_self = other_self
-        self.source = None #later this will be whatever source book we read.
+        self.source = None #later this will be the name of whatever source book we read.
         self.names = [] #list of loaded sheet names, for use in saving.
+        self.source_wb=None #the workbook from which we load everythin, read-only.
         
     def excel_to_grid(self, source, sheet, grid):
         """
         Opens the Excel file in source and loads the sheet into the grid.
         """
-        self.source = source #save original workbook for later use when saving data.
-        wb = load_workbook(source,data_only = False)
+        #save the loaded workbook once, for later use as a template
+        print("excel to grid")
+        if not self.source_wb:
+            #if its the first time calling, the load the workbook.
+            self.source_wb = load_workbook(source,data_only = True,read_only=False)
+            self.source=source #important for saving later
+            #this means a new instance of the entire class is needed if someone
+            #wants to do other operations of excel_to_grid.
+            
 
-        names = wb.get_sheet_names()
+        names = self.source_wb.get_sheet_names()
         
         if sheet in names:
             self.names.append(sheet)
@@ -37,9 +46,10 @@ class TABLES(object):
                 grid.DeleteCols(0,grid.GetNumberCols() ,True)
 
             
-            sh = wb.get_sheet_by_name(name=sheet)
+            sh = self.source_wb.get_sheet_by_name(name=sheet)
             num_rows = sh.max_row
-            num_cols = sh.max_column
+            num_cols = min(sh.max_column,23)
+            #23 is the number of columns of printed readings
             self.SetGridRows(grid, num_rows)
             self.SetGridCols(grid, num_cols)#extra columns for results
             #print 'number of rows = ', num_rows
@@ -56,14 +66,17 @@ class TABLES(object):
         """Reads the grid and writes to the excel file, then saves.
         each input grid is a tuple, grid followed by sheet name"""
         #reading self.source, the original file.
-        wb = load_workbook(self.source,data_only = False)
-        sheets = [None]*len(grids) #array for all the sheets
+        wb = load_workbook(self.source, data_only = False)
+                    
+        sheets = [None]*len(grids) #array for all the sheets from the table
         if len(grids)>0:
             for grid,num in zip(grids,range(len(grids)) ):
                 #each "grid" is a tuple, element 0 is the grid, element 1 is the name
                 sheets[num] = wb.get_sheet_by_name(name=grid[1])
                 
                 for r in range(grid[0].GetNumberRows()):
+                    #recall that the grid has no more columns
+                    #beyond the last reading column
                     for c in range(grid[0].GetNumberCols()):
                         cell_value = grid[0].GetCellValue(r,c)
                         sh = sheets[num]
