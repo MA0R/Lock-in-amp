@@ -1,0 +1,30 @@
+2017.05.31.17.10.35,  Creating SR: sucess
+2017.05.31.17.10.35,  Creating HP: sucess
+2017.05.31.17.10.35,  Creating FL: sucess
+2017.05.31.17.10.35,  Creating AG: sucess
+2017.05.31.17.10.35,  writing to SR: *CLS; *ESE\\n
+2017.05.31.17.10.35,  writing to FL: *RST
+2017.05.31.17.10.36,  writing to HP: RESET
+2017.05.31.17.10.39,  writing to SR: OUTX 1; OVRM 1; OFSL 3; SYNC 1; OFLT 8; FMOD 2\\n
+2017.05.31.17.10.39,  writing to HP: END 2; ACV AUTO; AZERO ON;DELAY 0;NPLC 20
+2017.05.31.17.10.39,  writing to FL: OUT 0V, 0HZ;RANGELCK OFF; PHASESFT ON
+
+2017.05.31.17.10.39,  writing to HP: ERR?
+2017.05.31.17.10.39,  reading HP: 109.108281818
+meter ESR = 109.108281818
+2017.05.31.17.10.39,  writing to FL: FAULT?
+2017.05.31.17.10.39,  reading FL: 109.452796567
+source ESR = 109.452796567
+2017.05.31.17.10.40,  writing to SR: *ESR?\\n
+2017.05.31.17.10.40,  reading SR: 108.516164551
+lockin ESR = 108.516164551
+
+Spread sheet row 7
+2017.05.31.17.10.40,  writing to AG: None
+2017.05.31.17.10.41,  writing to FL: OUT 0.01V, 50HZ
+2017.05.31.17.10.41,  writing to FL: None
+2017.05.31.17.10.41,  writing to FL: OUT 1V
+2017.05.31.17.10.42,  writing to FL: PHASE 0;PHASESFT ON
+2017.05.31.17.10.42,  writing to FL: OPER
+2017.05.31.17.10.42,  writing to SR: None
+2017.05.31.17.10.42,  writing to AG: None

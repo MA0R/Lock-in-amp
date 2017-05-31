@@ -57,7 +57,8 @@ class TABLES(object):
             
             for curr_row in range(num_rows):
                 for i in range(num_cols):
-                    grid.SetCellValue(curr_row, i, str(sh.cell(row=curr_row+1,column=i+1).value))
+                    val=str(sh.cell(row=curr_row+1,column=i+1).value)
+                    grid.SetCellValue(curr_row, i, val)
             return True
         else:
             return False
@@ -79,6 +80,12 @@ class TABLES(object):
                     #beyond the last reading column
                     for c in range(grid[0].GetNumberCols()):
                         cell_value = grid[0].GetCellValue(r,c)
+                        if cell_value == "None":
+                            cell_value = ""
+                        else:
+                            try: cell_value = float(cell_value)
+                            except ValueError: cell_value = cell_value
+                            #because wx grids only like strings, and excel only likes numbers
                         sh = sheets[num]
                         #save the value to the cell object's value attribute
                         sh.cell(row=r+1,column=c+1,value=cell_value)

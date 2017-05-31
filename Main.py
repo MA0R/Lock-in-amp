@@ -60,6 +60,10 @@ class GraphFrame(noname.MyFrame1):
         self.loaded_ranges = False
         self.OverideSafety = False
         self.controlgrid = tables.TABLES(self)
+
+        ########################
+        # disable some bottons #
+        ########################
         
         col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', '# Repetitions', '# steps', 'X ratio', 'STD', 'Effective DoF', 'M ratio', 'STD', 'Effective DoF']
         for i in range(len(col_names)):
@@ -178,7 +182,7 @@ class GraphFrame(noname.MyFrame1):
 
         self.loaded_dict = self.controlgrid.excel_to_grid(self.proj_file, 'Dict', self.m_grid2)
         if self.loaded_dict == True:
-            col_names = ['Key words', 'Meter', 'Key words', 'Source S', 'Key words', 'Source X']
+            col_names = ['Key words', 'Lock in', 'Meter', 'Source', 'Attenuator', 'REDUNDANT']
             for i in range(len(col_names)):
                 self.m_grid2.SetColLabelValue(i, col_names[i])
         else:

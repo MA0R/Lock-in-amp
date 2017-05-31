@@ -8,7 +8,6 @@ import stuff
 import csv
 import time
 import wx
-import visa
 import numpy as np
 
 class Algorithm(stuff.SwerleinThread):
@@ -30,8 +29,8 @@ class Algorithm(stuff.SwerleinThread):
             self.grid = self.info['grid']
         #notify window and event not needed, will simply print to table anyway, and table is to be made optional. if table exists, then print to it
         start_time = time.localtime()
-        log_file_name = 'log.'+str(start_time[0])+'.'+str(start_time[1])+'.'+str(start_time[2])+'.'+str(start_time[3])+'.'+str(start_time[4])+".txt"
-        raw_file_name = 'raw.'+str(start_time[0])+'.'+str(start_time[1])+'.'+str(start_time[2])+'.'+str(start_time[3])+'.'+str(start_time[4])+".csv"
+        log_file_name = 'GODSAC/log.'+str(start_time[0])+'.'+str(start_time[1])+'.'+str(start_time[2])+'.'+str(start_time[3])+'.'+str(start_time[4])+".txt"
+        raw_file_name = 'GODSAC/raw.'+str(start_time[0])+'.'+str(start_time[1])+'.'+str(start_time[2])+'.'+str(start_time[3])+'.'+str(start_time[4])+".csv"
         self.csvfile = open(raw_file_name,'wb')
         self.logfile = open(log_file_name,'w')
         self.writer = csv.writer(self.csvfile)
@@ -41,6 +40,7 @@ class Algorithm(stuff.SwerleinThread):
         self.ready = False
         self.All_data = []
         self.inst_bus = inst_bus
+        self.error = False
         self.start() #important that this is the last statement of initialisation. goes to run()
 
 
@@ -52,13 +52,23 @@ class Algorithm(stuff.SwerleinThread):
         self.logfile.write('\n')
 
     def WriteSave(self,text):
-        self.PrintSave('writing: '+str(text))
-        self.instrument.write(text)
+        if self.error == False:
+            try:
+                self.PrintSave('writing: '+str(text))
+                self.instrument.write(text)
+            except VisaIOError:
+                self.error = True
 
     def ReadSave(self):
-        reading = self.instrument.read_raw()
-        self.PrintSave('readings from instrument: '+str(reading))
-        return reading
+        if self.error == False:
+            try:
+                reading = self.instrument.read_raw()
+                self.PrintSave('readings from instrument: '+str(reading))
+                return reading
+            except VisaIOError:
+                self.error = True
+                return 0
+        
 
     def run(self):
         for run_number in range(self.info['readings']):
@@ -72,11 +82,13 @@ class Algorithm(stuff.SwerleinThread):
             self.instrument.write('RESET')
             self.instrument.write('end 2')
             self.instrument.write('DISP OFF, READY')
-
-        rm = self.inst_bus.ResourceManager()
-        self.instrument = rm.open_resource('GPIB0::'+str(self.info['port'])+'::INSTR')
-        self.instrument.timeout = 10000
-
+        
+        try:
+            rm = self.inst_bus.ResourceManager()
+            self.instrument = rm.open_resource('GPIB0::'+str(self.info['port'])+'::INSTR')
+            self.instrument.timeout = 10000
+        except VisaIOError:
+            self.error = True
         self.readings = []
         self.times = []
         self.AcdcArray = []
@@ -89,6 +101,7 @@ class Algorithm(stuff.SwerleinThread):
         if error != '0\r\n':
             self.csvfile.close()
             self.logfile.close()
+            self.error = True
             return #end the thread
 
         Meas_time=15.0              # Target measure time

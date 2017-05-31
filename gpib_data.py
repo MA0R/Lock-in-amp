@@ -183,7 +183,7 @@ class GPIBThreadF(stuff.WorkerThread):
         if case ==1 and not self._want_abort:
             #conditions on when to run swerlein, if there is anything in the box
             #and ofcourse if the algorithm is happy to keep running.
-            self.swerl = Swerlein.Algorithm(self.inst_bus, port = 24) #sets the thread running.
+            self.swerl = Swerlein.Algorithm(self.inst_bus, port = self.meter.bus) #sets the thread running.
             loop = True
             while loop == True:
                 if self.swerl.ready == True:
@@ -191,6 +191,9 @@ class GPIBThreadF(stuff.WorkerThread):
                     acdcrms = self.swerl.All_data[0][2]
                     self.set_grid_val(row,self.ref_v_print,acdcrms)
                     loop = False
+                elif self.swerl.error == True:
+                    self._want_abort = 1
+                    self.PrintSave("Swerlein algorithm failed, aborting")
                 if self._want_abort:
                     loop = False
         
@@ -210,7 +213,10 @@ class GPIBThreadF(stuff.WorkerThread):
         if not self._want_abort:
             self.com(self.lcin.set_value, self.command(row, self.Reserve_col))
             self.com(self.lcin.set_value,self.command(row, self.lcin_phase_col))
-            #   WHAT IS THE RANGE THAT IT GETS SENT?
+            #   NOW ALSO DO AUTO PHASE IF NECESSARY
+            case = self.read_grid_cell(row,self.AutoPhase_col)
+            if case == "1":
+                self.com(self.lcin.set_value,self.command(row, self.AutoPhase_col))
 
     def command(self, row, col):
         """
@@ -261,7 +267,11 @@ class GPIBThreadF(stuff.WorkerThread):
 
             self.set_attenuation(row)
             self.set_voltage_phase(row)
+            self.com(self.source.MeasureSetup)
+            self.com(self.lcin.MeasureSetup)
+            self.com(self.atten.MeasureSetup)
             self.run_swerl(row)
+            self.com(self.meter.MeasureSetup)
             
             nordgs = self.read_grid_cell(row, self.nordgs_col) #number of readings
             try:
@@ -306,7 +316,7 @@ class GPIBThreadF(stuff.WorkerThread):
                 y_readings.append(float(y))
                 t_readings.append(float(t))
             #printing res_mod twice?
-            printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.sr_res_mod_print,self.sr_auto_phas_print]
+            printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.time_const_print,self.sr_auto_phas_print]
             #post reading thing, nor normally present in dictionary. what to do about it?
             #can be part of the status comand, but that is not the correct repurposing.
             #would only work because the instrument is capable of returning a list.
