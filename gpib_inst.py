@@ -1,8 +1,11 @@
 """
-Organise instruments as classes so that swapping different sources and meters
-can be done relatively easily. The objects should return appropriate strings
-that can be executed as commands by the try_command method of the GPIBThread
-class in gpib_data.py. It assumes that 'self.inst_bus' is used in gpib_data.
+A general instrument class that returns a status for each command sent
+or recieved from its instrument. This allows it to be used with the "com"
+function in the main algorithm, when visa fails it does not halt the
+whole program but reports the failure instead.
+This current one is a mash up of something like the ref-step class,
+and something more simple that is simply used as an interface between
+the instruments and the thread.
 """
 
 import time
@@ -30,6 +33,11 @@ class INSTRUMENT(object):
         
 
     def create_instrument(self):
+        """
+        Needs to be called prior to any commands being sent or recieved.
+        Creates the visa instrument object, to which commands will be sent
+        and recieved.
+        """
         print("creating instruments")
         sucess = False
         string = string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()))+' Creating '+self.label+': '
@@ -43,9 +51,15 @@ class INSTRUMENT(object):
         return [sucess,None,string]
     
     def send(self,command):
+        """
+        From here a command is sent to the instrument, surrounded by the try block.
+        If the command fails, it does not halt the problem but sends back a failed status.
+        """
         sucess = False #did we read sucessfully
         #string to be printed and saved in log file
-        string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()))+' writing to '+self.label+': ' 
+        string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()))+' writing to '+self.label+': '
+        if command in (None,'None','None\n',''):
+            return [True,None,string+'"None" specified, command ignored']
         try:
             self.inst.write(command)
             time.sleep(self.com_settle_time)
@@ -56,6 +70,9 @@ class INSTRUMENT(object):
         return [sucess,None,string]
     
     def read_instrument(self):
+        """
+        Similar to the send function, but reads and expects a return value too.
+        """
         val = '0' #value to be returned, string-type like instruments
         sucess = False #did we read sucessfully
         #string to be printed and saved in log file
@@ -73,6 +90,7 @@ class INSTRUMENT(object):
     def set_value(self, value):
         line = str(self.com['SetValue'])
         line = line.replace("$",str(value))
+        print(line)
         return self.send(line)
 
     def initialise_instrument(self):

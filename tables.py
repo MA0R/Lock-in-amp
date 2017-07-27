@@ -26,8 +26,7 @@ class TABLES(object):
         Opens the Excel file in source and loads the sheet into the grid.
         """
         #save the loaded workbook once, for later use as a template
-        print("excel to grid")
-        if not self.source_wb:
+        if source != self.source:
             #if its the first time calling, the load the workbook.
             self.source_wb = load_workbook(source,data_only = True,read_only=False)
             self.source=source #important for saving later
@@ -84,7 +83,7 @@ class TABLES(object):
                             cell_value = ""
                         else:
                             try: cell_value = float(cell_value)
-                            except ValueError: cell_value = cell_value
+                            except ValueError: pass
                             #because wx grids only like strings, and excel only likes numbers
                         sh = sheets[num]
                         #save the value to the cell object's value attribute

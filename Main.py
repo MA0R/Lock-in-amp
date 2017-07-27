@@ -27,7 +27,7 @@ class GraphFrame(noname.MyFrame1):
         #the mixin below offers better ctrl c ctr v cut and paste than the basic wxgrid
         wx.grid.Grid.__bases__ += (pywxgrideditmixin.PyWXGridEditMixin,)
         self.m_grid3.__init_mixin__()
-        self.number_plots = 1
+        self.number_plots = 3
         self.CreateGraph('time', self.number_plots)
         self.m_button2.SetLabel('Plot') #starts with plotting off
         self.paused = True
@@ -65,9 +65,6 @@ class GraphFrame(noname.MyFrame1):
         # disable some bottons #
         ########################
         
-        col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', '# Repetitions', '# steps', 'X ratio', 'STD', 'Effective DoF', 'M ratio', 'STD', 'Effective DoF']
-        for i in range(len(col_names)):
-            self.m_grid21.SetColLabelValue(i, col_names[i])
 
     def CreateGraph(self, xlabel, number):
         """
@@ -91,7 +88,7 @@ class GraphFrame(noname.MyFrame1):
         else:
             panel.axs[0].set_title(graph_title)
             for i in range(number):
-                panel.axs[i].set_axis_bgcolor('black')
+                panel.axs[i].set_axis_bgcolor('blue')
                 panel.axs[i].grid(True, color='white')
                 panel.axs[i].tick_params(axis='both', labelsize=8)
         panel.fig.tight_layout()
@@ -338,8 +335,8 @@ class GraphFrame(noname.MyFrame1):
         #now call the thread
         if not self.worker1:
             self.worker1 = gpib_data.GPIBThreadF(self, self.EVT_RESULT_ID_1,\
-            [self.inst_bus, grid, start_row, stop_row, self.lcin, self.meter, self.source, self.atten, cols, self.Analysis_file_name],\
-            self.data, self.START_TIME, self.OverideSafety)
+            [self.inst_bus, grid, start_row, stop_row, self.lcin, self.meter, self.source, self.atten, cols],\
+            self.data, self.START_TIME, self.OverideSafety) #self.Analysis_file_name sent too?
 
     def OnStop(self, event):
         self.doStop()
@@ -498,7 +495,7 @@ class GraphFrame(noname.MyFrame1):
         if instrument == 'Lock in':
             adress = self.LcinAdress.GetValue()
             self.doOnSend(adress)
-        elif instrument == 'Meter':
+        elif instrument == 'meter':
             adress = self.MeterAdress.GetValue()
             self.doOnSend(adress)
         elif instrument == 'Source':
@@ -531,7 +528,7 @@ class GraphFrame(noname.MyFrame1):
         if instrument == 'Lock in':
             adress = self.LcinAdress.GetValue()
             self.doRead(adress)
-        elif instrument == 'Meter':
+        elif instrument == 'meter':
             adress = self.MeterAdress.GetValue()
             self.doRead(adress)
         elif instrument == 'Source':

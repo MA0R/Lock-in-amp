@@ -17,7 +17,7 @@ class Algorithm(stuff.SwerleinThread):
     def __init__(self,inst_bus,**kwargs):
         stuff.SwerleinThread.__init__(self,inst_bus,**kwargs)
         #default settings
-        self.info = {'port':22,'harmonics' :6,'name':None,'bursts':6,'readings':1,'time':15,'rng':'AUTO','acdc':True,'ac':False,'mean':False,'time':15,'grid':'','LFREQ':False}
+        self.info = {'port':'GPIB::22::INSTR','harmonics' :6,'name':None,'bursts':6,'readings':1,'time':15,'rng':'AUTO','acdc':True,'ac':False,'mean':False,'time':15,'grid':'','LFREQ':False}
         #update info if kwarg is not empty
         self.grid_exists = False
         for key in kwargs:
@@ -56,7 +56,7 @@ class Algorithm(stuff.SwerleinThread):
             try:
                 self.PrintSave('writing: '+str(text))
                 self.instrument.write(text)
-            except VisaIOError:
+            except self.inst_bus.VisaIOError:
                 self.error = True
 
     def ReadSave(self):
@@ -65,7 +65,7 @@ class Algorithm(stuff.SwerleinThread):
                 reading = self.instrument.read_raw()
                 self.PrintSave('readings from instrument: '+str(reading))
                 return reading
-            except VisaIOError:
+            except self.inst_bus.VisaIOError:
                 self.error = True
                 return 0
         
@@ -83,12 +83,10 @@ class Algorithm(stuff.SwerleinThread):
             self.instrument.write('end 2')
             self.instrument.write('DISP OFF, READY')
         
-        try:
-            rm = self.inst_bus.ResourceManager()
-            self.instrument = rm.open_resource('GPIB0::'+str(self.info['port'])+'::INSTR')
-            self.instrument.timeout = 10000
-        except VisaIOError:
-            self.error = True
+        rm = self.inst_bus.ResourceManager()
+        self.instrument = rm.open_resource(str(self.info['port']))
+        self.instrument.timeout = 10000
+
         self.readings = []
         self.times = []
         self.AcdcArray = []

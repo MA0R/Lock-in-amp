@@ -39,11 +39,19 @@ class SharedList(object):
     def __init__(self, item):
         self.lock = threading.Lock()
         self.item = item
-        self.value = [] # this initialisation makes it a list
+        self.value = [[],[],[]] # this initialisation makes it a list of lists
         
     def add_to_list(self,item): # this method is list specific
         self.lock.acquire()
         self.value.append(item)
+        self.lock.release()
+
+    def add_multiple(self,data):
+        self.lock.acquire()
+        i = 0
+        for d in data:
+            self.value[i].append(d)
+            i=i+1
         self.lock.release()
         
     def copy_list(self): # need a copy to avoid changes during plotting

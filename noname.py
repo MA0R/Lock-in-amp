@@ -34,19 +34,6 @@ class MyFrame1 ( wx.Frame ):
 		gbSizer3.SetFlexibleDirection( wx.BOTH )
 		gbSizer3.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_button13 = wx.Button( self.m_panel5, wx.ID_ANY, u"Generate a table", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer3.Add( self.m_button13, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.Analysis_file_name = wx.TextCtrl( self.m_panel5, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer3.Add( self.Analysis_file_name, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_staticText10 = wx.StaticText( self.m_panel5, wx.ID_ANY, u"Analysis file name", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText10.Wrap( -1 )
-		gbSizer3.Add( self.m_staticText10, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_button122 = wx.Button( self.m_panel5, wx.ID_ANY, u"Analyse data", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer3.Add( self.m_button122, wx.GBPosition( 2, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self.m_button5 = wx.Button( self.m_panel5, wx.ID_ANY, u"Start", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer3.Add( self.m_button5, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -54,7 +41,7 @@ class MyFrame1 ( wx.Frame ):
 		gbSizer3.Add( self.m_button6, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_textCtrl81 = wx.TextCtrl( self.m_panel5, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,250 ), wx.TE_MULTILINE )
-		gbSizer3.Add( self.m_textCtrl81, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
+		gbSizer3.Add( self.m_textCtrl81, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
 		
 		self.m_button12 = wx.Button( self.m_panel5, wx.ID_ANY, u"Make Safe", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_button12.SetBackgroundColour( wx.Colour( 0, 255, 0 ) )
@@ -63,7 +50,7 @@ class MyFrame1 ( wx.Frame ):
 		
 		self.m_staticText51 = wx.StaticText( self.m_panel5, wx.ID_ANY, u"Event reports", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText51.Wrap( -1 )
-		gbSizer3.Add( self.m_staticText51, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer3.Add( self.m_staticText51, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		self.m_panel5.SetSizer( gbSizer3 )
@@ -110,7 +97,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_button14 = wx.Button( self.m_panel511, wx.ID_ANY, u"Refresh instruments", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer311.Add( self.m_button14, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText13 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Meter", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText13 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"meter", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText13.Wrap( -1 )
 		gbSizer311.Add( self.m_staticText13, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -122,7 +109,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_staticText121.Wrap( -1 )
 		gbSizer311.Add( self.m_staticText121, wx.GBPosition( 6, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		m_comboBox8Choices = [ u"Lock in", u"Meter", u"Source", u"Attenuator", u"Attenuator2" ]
+		m_comboBox8Choices = [ u"Lock in", u"meter", u"Source", u"Attenuator", u"Attenuator2" ]
 		self.m_comboBox8 = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"Select instrument", wx.DefaultPosition, wx.DefaultSize, m_comboBox8Choices, 0 )
 		gbSizer311.Add( self.m_comboBox8, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -237,7 +224,7 @@ class MyFrame1 ( wx.Frame ):
 		
 		self.m_menubar1 = wx.MenuBar( 0 )
 		self.m_menu11 = wx.Menu()
-		self.m_menuItem21 = wx.MenuItem( self.m_menu11, wx.ID_ANY, u"Open dictionary", wx.EmptyString, wx.ITEM_NORMAL )
+		self.m_menuItem21 = wx.MenuItem( self.m_menu11, wx.ID_ANY, u"Open file", wx.EmptyString, wx.ITEM_NORMAL )
 		self.m_menu11.AppendItem( self.m_menuItem21 )
 		
 		self.m_menuItem11 = wx.MenuItem( self.m_menu11, wx.ID_ANY, u"Save tables", wx.EmptyString, wx.ITEM_NORMAL )
@@ -357,45 +344,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_scrolledWindow4.SetSizer( bSizer2 )
 		self.m_scrolledWindow4.Layout()
 		bSizer2.Fit( self.m_scrolledWindow4 )
-		self.m_auinotebook41.AddPage( self.m_scrolledWindow4, u"Instrument commands", False, wx.NullBitmap )
-		self.m_scrolledWindow41 = wx.ScrolledWindow( self.m_auinotebook41, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
-		self.m_scrolledWindow41.SetScrollRate( 5, 5 )
-		bSizer21 = wx.BoxSizer( wx.VERTICAL )
-		
-		self.m_grid21 = wx.grid.Grid( self.m_scrolledWindow41, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		
-		# Grid
-		self.m_grid21.CreateGrid( 8, 13 )
-		self.m_grid21.EnableEditing( True )
-		self.m_grid21.EnableGridLines( True )
-		self.m_grid21.EnableDragGridSize( False )
-		self.m_grid21.SetMargins( 0, 0 )
-		
-		# Columns
-		self.m_grid21.EnableDragColMove( False )
-		self.m_grid21.EnableDragColSize( True )
-		self.m_grid21.SetColLabelSize( 30 )
-		self.m_grid21.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Rows
-		self.m_grid21.EnableDragRowSize( True )
-		self.m_grid21.SetRowLabelSize( 80 )
-		self.m_grid21.SetRowLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Label Appearance
-		
-		# Cell Defaults
-		self.m_grid21.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-		bSizer21.Add( self.m_grid21, 0, wx.ALL, 5 )
-		
-		self.m_button151 = wx.Button( self.m_scrolledWindow41, wx.ID_ANY, u"Add Row", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer21.Add( self.m_button151, 0, wx.ALL, 5 )
-		
-		
-		self.m_scrolledWindow41.SetSizer( bSizer21 )
-		self.m_scrolledWindow41.Layout()
-		bSizer21.Fit( self.m_scrolledWindow41 )
-		self.m_auinotebook41.AddPage( self.m_scrolledWindow41, u"Callibration ranges", True, wx.NullBitmap )
+		self.m_auinotebook41.AddPage( self.m_scrolledWindow4, u"Instrument commands", True, wx.NullBitmap )
 		
 		
 		self.m_mgr.Update()
@@ -403,8 +352,6 @@ class MyFrame1 ( wx.Frame ):
 		
 		# Connect Events
 		self.Bind( wx.EVT_CLOSE, self.OnClose )
-		self.m_button13.Bind( wx.EVT_BUTTON, self.OnGenerateTable )
-		self.m_button122.Bind( wx.EVT_BUTTON, self.OnAnalyse )
 		self.m_button5.Bind( wx.EVT_BUTTON, self.OnStart )
 		self.m_button6.Bind( wx.EVT_BUTTON, self.OnStop )
 		self.m_button12.Bind( wx.EVT_BUTTON, self.OnMakeSafe )
@@ -422,7 +369,6 @@ class MyFrame1 ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self.OnOverideSafety, id = self.m_menuItem25.GetId() )
 		self.Bind( wx.EVT_MENU, self.OnHelp, id = self.m_menuItem30.GetId() )
 		self.Bind( wx.EVT_MENU, self.OnAbout, id = self.m_menuItem31.GetId() )
-		self.m_button151.Bind( wx.EVT_BUTTON, self.OnAddRow )
 	
 	def __del__( self ):
 		self.m_mgr.UnInit()
@@ -431,12 +377,6 @@ class MyFrame1 ( wx.Frame ):
 	
 	# Virtual event handlers, overide them in your derived class
 	def OnClose( self, event ):
-		event.Skip()
-	
-	def OnGenerateTable( self, event ):
-		event.Skip()
-	
-	def OnAnalyse( self, event ):
 		event.Skip()
 	
 	def OnStart( self, event ):
@@ -488,9 +428,6 @@ class MyFrame1 ( wx.Frame ):
 		event.Skip()
 	
 	def OnAbout( self, event ):
-		event.Skip()
-	
-	def OnAddRow( self, event ):
 		event.Skip()
 	
 

@@ -3,6 +3,17 @@ Everything about GPIB control for the lockin calibration algorithm.
 The GUI should only allow one GPIB thread at a time.
 Thread also writes raw data file to an excel sheet.
 Log files are written at event termination from graphframe.py.
+
+The "com" function ends up being a little clunky, this was originally developed
+for refstep where everything had to be very safe so it made sense to wrap
+each command with a safety check. A function decorator can be used, but this
+is essentially the same.
+
+Since there are no built-in functions in the instrument class, this results in a pretty
+simple instrument class and lots of info present within the control thread (here).
+It might be better to have specific classes inherit from the main instrument class
+and then they can have specifi operations. eg a class Attenuator with a function
+to set its own attenuation. 
 """
 
 import stuff
@@ -66,6 +77,8 @@ class GPIBThreadF(stuff.WorkerThread):
         self.com(self.meter.create_instrument) #create meter
         self.com(self.source.create_instrument)
         self.com(self.atten.create_instrument)
+
+        self.header_row = 5
         
         self.start() #important that this is the last statement of initialisation. goes to run()
 
@@ -86,6 +99,15 @@ class GPIBThreadF(stuff.WorkerThread):
         pass
 
     def com(self, command,send_item=None):
+        """Similar to the refstep com. All commands pass here in the form:
+        (instrument.function, arguments) and it operates instrument.function(arguments).
+        The instrument class always returns a 3 element array:
+        (sucess status[True/Falce], readings value, report string).
+        Sucess is true when the command was safely sent/recieved (at least visa thinks so).
+        Reading is empty unless the instrumetn was read. Report string is to be printed
+        to the log file and to the screen stating a breakdown of the
+        command/results read+time signature.
+        """
         if not self._want_abort:
             if send_item != None:
                 sucess,val,string = command(send_item)
@@ -135,6 +157,8 @@ class GPIBThreadF(stuff.WorkerThread):
         table. Alternatively, more commands can be brought in here as this is a specific
         internal use product.
         """
+        self.com(self.source.set_value,'S')
+
         case = self.read_grid_cell(row, self.Atten_col)
         try:
             case = int(float(case)) #attenuation col has 1 for setting attenuation
@@ -143,7 +167,7 @@ class GPIBThreadF(stuff.WorkerThread):
             self._want_abort = 1
             return
         if case == 0:
-            self.com(self.atten.set_value,"B123\\\\nB567")
+            self.com(self.atten.set_value,"B123\\nB567")
         elif case == 20:
             self.com(self.atten.set_value,"A2B13\\nB567")
         elif case == 40:
@@ -159,6 +183,8 @@ class GPIBThreadF(stuff.WorkerThread):
         else:
             self.PrintSave("No valid attentuation")
 
+        self.com(self.source.set_value, 'N')
+        
     def set_voltage_phase(self, row):
         """
         Function to set the voltage
@@ -183,6 +209,7 @@ class GPIBThreadF(stuff.WorkerThread):
         if case ==1 and not self._want_abort:
             #conditions on when to run swerlein, if there is anything in the box
             #and ofcourse if the algorithm is happy to keep running.
+            self.PrintSave("Running GOD's AC at port {}".format(self.meter.bus))
             self.swerl = Swerlein.Algorithm(self.inst_bus, port = self.meter.bus) #sets the thread running.
             loop = True
             while loop == True:
@@ -192,8 +219,9 @@ class GPIBThreadF(stuff.WorkerThread):
                     self.set_grid_val(row,self.ref_v_print,acdcrms)
                     loop = False
                 elif self.swerl.error == True:
-                    self._want_abort = 1
-                    self.PrintSave("Swerlein algorithm failed, aborting")
+                    #self._want_abort = 1
+                    self.PrintSave("Swerlein algorithm failed, NOT aborting")
+                    loop = False
                 if self._want_abort:
                     loop = False
         
@@ -224,8 +252,9 @@ class GPIBThreadF(stuff.WorkerThread):
         The command has the column header decorating the actual value, value replaces "$".
         """
         val = str(self.read_grid_cell(row, col))
-        com = str(self.read_grid_cell(self.start_row-1, col)) #reads column headers
-        return com.replace("$",val)
+        com = str(self.read_grid_cell(self.header_row, col)) #reads column headers
+        command = com.replace("$",val)
+        return command
 
 
     def run(self):
@@ -304,6 +333,7 @@ class GPIBThreadF(stuff.WorkerThread):
                     x, y, t = tripple_reading.split(",")
                     #this line is only used for testing with the virtual visa:
                     #x,y,t = str("{},{},{}".format(tripple_reading,tripple_reading,tripple_reading)).split(",")
+                    self.data.add_multiple([x,y,t])
                 except ValueError:
                     self.PrintSave("could not unpack tripple reading: {}, aborting".format(tripple_reading))
                     self._want_abort = 1
@@ -317,23 +347,23 @@ class GPIBThreadF(stuff.WorkerThread):
                 t_readings.append(float(t))
             #printing res_mod twice?
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.time_const_print,self.sr_auto_phas_print]
-            #post reading thing, nor normally present in dictionary. what to do about it?
-            #can be part of the status comand, but that is not the correct repurposing.
-            #would only work because the instrument is capable of returning a list.
+            #This is the post reading extra-readings.
+            #They can be part of the status comand, but that is not the correct repurposing.
+            #would only work because the instrument is capable of returning a list,
             #This may not always be the case
-            self.com(self.lcin.set_value,"SENS?;RMOD?;OFLT?;PHAS?\\\\n")
+            self.com(self.lcin.set_value,"SENS?;RMOD?;OFLT?;PHAS?\\n")
             post_msmnt_results = []
             for col in printing_cols:
                 reading = str(self.com(self.lcin.read_instrument))
                 self.set_grid_val(row, col, reading)
                 post_msmnt_results.append(reading)
             
-            #the readings would be empty arrays if the program is sent to stop
+            #the readings would be empty arrays if the program is sent to abort
             #so initialise the values of avg and std as strings 'failed'
             #then if lengths of the arrays are longer than 0, we can compute
             #and therefore save reasonable (calculatable) numbers
-            x_avg,x_std,y_avg,y_std,t_avg,t_std = ['failed']*6
-            if len(x_readings)>0:
+            x_avg,x_std,y_avg,y_std,t_avg,t_std = ['failed']*6 #initialise as strings
+            if len(x_readings)>0: #If readings are present...
                 x_avg = np.average(x_readings)
                 x_std = np.std(x_readings)
             if len(y_readings)>0:
@@ -350,8 +380,8 @@ class GPIBThreadF(stuff.WorkerThread):
             self.set_grid_val(row,self.sr_y_print+1,y_std)
             self.set_grid_val(row,self.sr_theta_print,"{},{}".format(t_avg,t_std))
             #unused columns?
-            #self.sr_range_print = 19
-            #self.time_const_print = 20
+            # self.sr_range_print = 19
+            # self.time_const_print = 20
 
             #save a line to the excel fiel
             line = [time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime())]
