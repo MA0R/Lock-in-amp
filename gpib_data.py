@@ -21,7 +21,7 @@ import csv
 import time
 import wx
 import numpy as np
-import gpib_inst
+import instrument
 import openpyxl
 import Thread as Swerlein
 
@@ -43,7 +43,7 @@ class GPIBThreadF(stuff.WorkerThread):
         self.atten = param[7]
 
         self.VarV_col, self.Phase_col, self.Atten_col, self.MeasRef_col, self.AutoPhase_col, self.Reserve_col, self.Freq_col,\
-        self.VoltRatio_col, self.lcin_phase_col, self.meter_range_col, self.nordgs_col = param[8]
+        self.VoltRatio_col, self.lcin_range_col, self.meter_range_col, self.nordgs_col = param[8]
         #columns to print to: (Yes a lot of columns, but they can be fiddled with individually now?)
         self.time_print = 12
         self.ref_v_print = 13
@@ -124,76 +124,32 @@ class GPIBThreadF(stuff.WorkerThread):
         else:
             return 0
 
-
-    def Error_string_maker(self):
-        """
-        Reads all errors in the instruments, and appends them together in a string.
-        If there are errors during the running of the code, they will be printed
-        on the left of the table as a warning flag.
-        """
-        #somehow still prints "0" when the instruments have no error.
-        string = " "
-        #query instrument errors, and save individual error strings.
-        self.com(self.meter.query_error)
-        m_esr = str(self.com(self.meter.read_instrument))
-        self.PrintSave('meter ESR = '+m_esr)
-        if m_esr != self.meter.com['NoError']: string = 'meter: '+m_esr
-        self.com(self.source.query_error)
-        s_esr = str(self.com(self.source.read_instrument))
-        self.PrintSave('source ESR = '+s_esr)
-        if s_esr != self.source.com['NoError']: string = string +' source : '+s_esr
-        self.com(self.lcin.query_error)
-        l_esr = str(self.com(self.lcin.read_instrument))
-        self.PrintSave('lcin ESR = '+l_esr)
-        if l_esr != self.lcin.com['NoError']: string = string +' lcin: ' +l_esr
-
-        return string
-
     def set_attenuation(self, row):
         """
-        Attenuation is set here, soon to set the number of readings too?
-        This spreads out the sending of values to instruments, needs to either
-        be part of the dictionaries (which is long and messy) or read from the control
-        table. Alternatively, more commands can be brought in here as this is a specific
-        internal use product.
+        Attenuation is set here, the source is set to output off before setting changing
+        attenuation.
         """
-        self.com(self.source.set_value,'S')
-
+        self.com(self.source.outpt_off)
+        
         case = self.read_grid_cell(row, self.Atten_col)
-        try:
-            case = int(float(case)) #attenuation col has 1 for setting attenuation
-        except TypeError:
-            self.PrintSave("invalid case{} at row {}".format(case,row))
-            self._want_abort = 1
-            return
-        if case == 0:
-            self.com(self.atten.set_value,"B123\\nB567")
-        elif case == 20:
-            self.com(self.atten.set_value,"A2B13\\nB567")
-        elif case == 40:
-            self.com(self.atten.set_value,"A3B12\\nB567")
-        elif case == 60:
-            self.com(self.atten.set_value,"A23B1\\nB567")
-        elif case == 80:
-            self.com(self.atten.set_value,"A3B12\\nA7B56")
-        elif case == 100:
-            self.com(self.atten.set_value,"A23B1\\nA7B56")
-        elif case == 120:
-            self.com(self.atten.set_value,"A23B1\\nA67B5")
-        else:
-            self.PrintSave("No valid attentuation")
+        
+        self.atten.set_atten(case)
 
-        self.com(self.source.set_value, 'N')
+        self.com(self.source.outpt_on)
         
     def set_voltage_phase(self, row):
         """
         Function to set the voltage
         """
         if not self._want_abort:
-            self.com(self.source.set_value,self.command(row, self.Freq_col))
-            self.com(self.source.set_value,self.command(row, self.Atten_col))#but this one wont have the correct header...
-            self.com(self.source.set_value,self.command(row, self.VarV_col))
-            self.com(self.source.set_value,self.command(row, self.Phase_col))
+            freq = self.read_grid_cell(row,self.Freq_col)
+            self.com(self.source.set_freq,freq)
+            #This next one sends none at the moment, no idea what I put it in here for. Does the CH need to even know the attenuation?
+            #self.com(self.source.set_value,self.command(row, self.Atten_col))#but this one wont have the correct header...
+            volt = self.read_grid_cell(row, self.VarV_col)
+            self.com(self.source.set_voltage,volt)
+            phase = self.read_grid_cell(row, self.Phase_col)
+            self.com(self.source.set_phase,phase)
 
     def run_swerl(self, row):
         """
@@ -209,8 +165,8 @@ class GPIBThreadF(stuff.WorkerThread):
         if case ==1 and not self._want_abort:
             #conditions on when to run swerlein, if there is anything in the box
             #and ofcourse if the algorithm is happy to keep running.
-            self.PrintSave("Running GOD's AC at port {}".format(self.meter.bus))
-            self.swerl = Swerlein.Algorithm(self.inst_bus, port = self.meter.bus) #sets the thread running.
+            self.PrintSave("Running GOD's AC at port {}".format(self.meter.adress))
+            self.swerl = Swerlein.Algorithm(self.inst_bus, port = self.meter.adress) #sets the thread running.
             loop = True
             while loop == True:
                 if self.swerl.ready == True:
@@ -239,18 +195,24 @@ class GPIBThreadF(stuff.WorkerThread):
         read the reserve and range cells, and send with appropriate packaging
         """
         if not self._want_abort:
-            self.com(self.lcin.set_value, self.command(row, self.Reserve_col))
-            self.com(self.lcin.set_value,self.command(row, self.lcin_phase_col))
-            #   NOW ALSO DO AUTO PHASE IF NECESSARY
+            reserve = self.read_grid_cell(row,self.Reserve_col)
+            self.com(self.lcin.set_reserve, reserve)
+            ran = self.read_grid_cell(row,self.lcin_range_col)
+            self.lcin.set_range(ran)
             case = self.read_grid_cell(row,self.AutoPhase_col)
             if case == "1":
-                self.com(self.lcin.set_value,self.command(row, self.AutoPhase_col))
+                self.com(self.lcin.auto_phase)
 
     def command(self, row, col):
         """
+        NOT USED, BUT THE TWO REFERENCES TO THIS FUNCTION HAVENT
+        BEEN REPLACED BY ANYTHING ELSE, NOT SURE IF THEY ARE NECESSARY?
+
         given a row and column, it will return the full command to send the instrument.
         The command has the column header decorating the actual value, value replaces "$".
         """
+        raise Exception
+    
         val = str(self.read_grid_cell(row, col))
         com = str(self.read_grid_cell(self.header_row, col)) #reads column headers
         command = com.replace("$",val)
@@ -317,6 +279,7 @@ class GPIBThreadF(stuff.WorkerThread):
             #theta used to verify the correct reading order of x and y?
             #lockin aparantly switches the order of (x,y) randomly.
             #perhaps solved by clearing the instrument bus?
+            #I still havent had such problems.
             x_readings = []
             y_readings = []
             t_readings = []
@@ -330,9 +293,9 @@ class GPIBThreadF(stuff.WorkerThread):
                 time.sleep(1)
                 tripple_reading = str(self.com(self.lcin.read_instrument))
                 try:
-                    x, y, t = tripple_reading.split(",")
+                    #x, y, t = tripple_reading.split(",")
                     #this line is only used for testing with the virtual visa:
-                    #x,y,t = str("{},{},{}".format(tripple_reading,tripple_reading,tripple_reading)).split(",")
+                    x,y,t = str("{},{},{}".format(tripple_reading,tripple_reading,tripple_reading)).split(",")
                     self.data.add_multiple([x,y,t])
                 except ValueError:
                     self.PrintSave("could not unpack tripple reading: {}, aborting".format(tripple_reading))
@@ -351,7 +314,7 @@ class GPIBThreadF(stuff.WorkerThread):
             #They can be part of the status comand, but that is not the correct repurposing.
             #would only work because the instrument is capable of returning a list,
             #This may not always be the case
-            self.com(self.lcin.set_value,"SENS?;RMOD?;OFLT?;PHAS?\\n")
+            self.com(self.lcin.post_msmnt_query)
             post_msmnt_results = []
             for col in printing_cols:
                 reading = str(self.com(self.lcin.read_instrument))

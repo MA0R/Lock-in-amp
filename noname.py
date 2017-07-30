@@ -82,14 +82,6 @@ class MyFrame1 ( wx.Frame ):
 		self.AttenAdress = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::1::INSTR", wx.DefaultPosition, wx.DefaultSize, AttenAdressChoices, 0 )
 		gbSizer311.Add( self.AttenAdress, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText11 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Attenuator2", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText11.Wrap( -1 )
-		gbSizer311.Add( self.m_staticText11, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		AttenAdress2Choices = []
-		self.AttenAdress2 = wx.ComboBox( self.m_panel511, wx.ID_ANY, u"GPIB0::1::INSTR", wx.DefaultPosition, wx.DefaultSize, AttenAdress2Choices, 0 )
-		gbSizer311.Add( self.AttenAdress2, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self.m_staticText12 = wx.StaticText( self.m_panel511, wx.ID_ANY, u"Lock in", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText12.Wrap( -1 )
 		gbSizer311.Add( self.m_staticText12, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -310,41 +302,6 @@ class MyFrame1 ( wx.Frame ):
 		self.m_scrolledWindow3.Layout()
 		bSizer1.Fit( self.m_scrolledWindow3 )
 		self.m_auinotebook41.AddPage( self.m_scrolledWindow3, u"Control settings", False, wx.NullBitmap )
-		self.m_scrolledWindow4 = wx.ScrolledWindow( self.m_auinotebook41, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
-		self.m_scrolledWindow4.SetScrollRate( 5, 5 )
-		bSizer2 = wx.BoxSizer( wx.VERTICAL )
-		
-		self.m_grid2 = wx.grid.Grid( self.m_scrolledWindow4, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		
-		# Grid
-		self.m_grid2.CreateGrid( 8, 4 )
-		self.m_grid2.EnableEditing( True )
-		self.m_grid2.EnableGridLines( True )
-		self.m_grid2.EnableDragGridSize( False )
-		self.m_grid2.SetMargins( 0, 0 )
-		
-		# Columns
-		self.m_grid2.EnableDragColMove( False )
-		self.m_grid2.EnableDragColSize( True )
-		self.m_grid2.SetColLabelSize( 30 )
-		self.m_grid2.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Rows
-		self.m_grid2.EnableDragRowSize( True )
-		self.m_grid2.SetRowLabelSize( 80 )
-		self.m_grid2.SetRowLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Label Appearance
-		
-		# Cell Defaults
-		self.m_grid2.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-		bSizer2.Add( self.m_grid2, 0, wx.ALL, 5 )
-		
-		
-		self.m_scrolledWindow4.SetSizer( bSizer2 )
-		self.m_scrolledWindow4.Layout()
-		bSizer2.Fit( self.m_scrolledWindow4 )
-		self.m_auinotebook41.AddPage( self.m_scrolledWindow4, u"Instrument commands", True, wx.NullBitmap )
 		
 		
 		self.m_mgr.Update()

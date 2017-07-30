@@ -3,32 +3,17 @@ A general instrument class that returns a status for each command sent
 or recieved from its instrument. This allows it to be used with the "com"
 function in the main algorithm, when visa fails it does not halt the
 whole program but reports the failure instead.
-This current one is a mash up of something like the ref-step class,
-and something more simple that is simply used as an interface between
-the instruments and the thread.
+Current commands in this class always send 'None' to the instrument,
+which is a default that gets ignored.
 """
 
 import time
 class INSTRUMENT(object):
-    def __init__(self,inst_bus,letter, **kwargs):
-        self.com = {'label':'', 'Ranges':[], 'measure_seperation':'0', 'NoError':'','reset':'','status':'','init':'','MakeSafe':'', 'error':'', 'SettleTime':'0', 'SetValue':'', 'MeasureSetup':'','SingleMsmntSetup':''} #command dictionary
-        self.com.update(kwargs) #update dictionary to include all sent commands.
-        self.label = self.com["label"]
-        self.com.update(label=str(letter)+str(kwargs['label']) )
-        self.range = eval(self.com['Ranges'])
-        self.bus = self.com['bus']
-        #ensure values are ints
-        try:
-            self.com_settle_time = float(self.com['SettleTime'])
-        except:
-            print("settle time made into 1, from unreadable: "+str(self.com['SettleTime']))
-            self.com_settle_time = 1
-        try:
-            self.measure_seperation = float(self.com['measure_seperation'])
-        except:
-            print("measure seperation made into 0, from unreadable: "+str(self.com['measure_seperation']))
-            self.measure_seperation = 0
-
+    def __init__(self,inst_bus,adress,label='No label set!'):
+        self.label = label
+        self.com_settle_time = 0
+        self.measure_seperation = 0
+        self.adress = adress
         self.inst_bus = inst_bus #save the instrument bus, either visa or the simulated visa
         
 
@@ -43,7 +28,7 @@ class INSTRUMENT(object):
         string = string = str(time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime()))+' Creating '+self.label+': '
         try:
             self.rm = self.inst_bus.ResourceManager()
-            self.inst = self.rm.open_resource(self.bus)
+            self.inst = self.rm.open_resource(self.adress)
             string = string+"sucess"
             sucess = True
         except self.inst_bus.VisaIOError:
@@ -86,31 +71,25 @@ class INSTRUMENT(object):
             sucess = True #TO BE REMOVED LATER
             string = string+"visa failed"
         return [sucess,val,string]
-        
-    def set_value(self, value):
-        line = str(self.com['SetValue'])
-        line = line.replace("$",str(value))
-        print(line)
-        return self.send(line)
 
     def initialise_instrument(self):
-        return self.send(self.com['init'])
+        return self.send("None")
 
     def make_safe(self):
-        return self.send(self.com['MakeSafe'])
+        return self.send("None")
 
     def inst_status(self):
-        return self.send(self.com['status'])
+        return self.send("None")
 
     def reset_instrument(self):
-        return self.send(self.com['reset'])
+        return self.send("None")
 
     def query_error(self):
-        return self.send(self.com['error'])
+        return self.send("None")
 
     def MeasureSetup(self):
-        return self.send(self.com['MeasureSetup'])
+        return self.send("None")
 
     def SingleMsmntSetup(self):
-        return self.send(self.com['SingleMsmntSetup'])
+        return self.send("None")
 

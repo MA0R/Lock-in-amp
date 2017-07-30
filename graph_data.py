@@ -46,6 +46,8 @@ class DisplayThread(stuff.WorkerThread):
             if len(copy) == 0: #no data so abort the thread
                 wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, None))
                 return
+            else:
+                data_stdev = np.std(copy)
             
             if xmax_control=='Auto':
                 xmax = len(copy) if len(copy) > window else window

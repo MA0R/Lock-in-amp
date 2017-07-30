@@ -2,24 +2,29 @@
 Main thread for controlling the buttons of the ref-step algorithm
 """
 import wx, wx.html
-import noname
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import gpib_data
-import gpib_inst
-import stuff
 import sys
-import graph_data
 import time
+import os
+
 import visa2 # this is the simulation version of visa
 import visa
-import GridMaker
-import os
-import pywxgrideditmixin
-import tables
-import analysis
+
+import noname #The inherited class for GUI
+import gpib_data #Data collection thread
+import instrument #General instrument class
+import stuff #Extra functions and things that dont have a home yet
+import graph_data #graphing thread
+import pywxgrideditmixin #mixin to allow copy and paste from/to tables
+import tables #For printing tables and stuff
+
+import inst_ch
+import inst_lock_in
+import inst_meter
+import inst_attenuator
 
 class GraphFrame(noname.MyFrame1):
     def __init__(self, parent):
@@ -177,32 +182,6 @@ class GraphFrame(noname.MyFrame1):
         else:
             print("no sheet named 'Control' found")
 
-        self.loaded_dict = self.controlgrid.excel_to_grid(self.proj_file, 'Dict', self.m_grid2)
-        if self.loaded_dict == True:
-            col_names = ['Key words', 'Lock in', 'Meter', 'Source', 'Attenuator', 'REDUNDANT']
-            for i in range(len(col_names)):
-                self.m_grid2.SetColLabelValue(i, col_names[i])
-        else:
-            print("no sheet named 'Dict' found, can not run")
-#not in use
-##        self.loaded_ranges = self.controlgrid.excel_to_grid(self.proj_file, 'Ranges', self.m_grid21)
-##        if self.loaded_ranges == True:
-##            col_names = ['Min', 'Max', '# Readings', 'Pre-reading delay', 'Inter-reading delay', \
-##            '# Repetitions', '# steps']
-##            for i in range(len(col_names)):
-##                self.m_grid21.SetColLabelValue(i, col_names[i])
-##        else:
-##            print("no sheet named 'Ranges' found")
-
-    def OnAddRow(self, event):
-        self.m_grid21.AppendRows(1, True)
-
-    def OnGenerateTable(self, event):
-        pass
-
-    def GenerateTable(self):
-        pass
-
     def OnAnalysisFile(self, event):
         """
         from MIEcalculator, graph_gui.py.
@@ -281,31 +260,14 @@ class GraphFrame(noname.MyFrame1):
 
     def CreateInstruments(self):
         """
-        Reads the dictionary uploaded to the grid, and creates gpib_inst.INSTRUMENT accordingly.
-        Instruments must be the meter on the left, source S in the middle, source X on the right.
+        Sends the instrument bus (visa or visa2), letter (For instrument type) and adress
+        to instrument objects and saves them as class variables.
         """
-        dicts = self.m_grid2
-        dl = {}
-        dm = {}
-        ds = {}
-        da = {} #dictionaries for the four instruments
-        rows = dicts.GetNumberRows()
-        for row in range(rows):
-            dl.update({str(dicts.GetCellValue(row, 0)):str(dicts.GetCellValue(row, 1))})
-            dm.update({str(dicts.GetCellValue(row, 0)):str(dicts.GetCellValue(row, 2))})
-            ds.update({str(dicts.GetCellValue(row, 0)):str(dicts.GetCellValue(row, 3))})
-            da.update({str(dicts.GetCellValue(row, 0)):str(dicts.GetCellValue(row, 4))})
-
-        dl.update({'NoError':eval("'"+dl['NoError']+"'")})
-        #so that the read_raw function matches the no error string
-        dm.update({'NoError':eval("'"+dm['NoError']+"'")})
-        ds.update({'NoError':eval("'"+ds['NoError']+"'")})
-        da.update({'NoError':eval("'"+da['NoError']+"'")})
-        self.lcin = gpib_inst.INSTRUMENT(self.inst_bus,'L', bus=self.LcinAdress.GetValue(), **dl)
-        self.meter = gpib_inst.INSTRUMENT(self.inst_bus,'M', bus=self.MeterAdress.GetValue(), **dm)
-        self.source = gpib_inst.INSTRUMENT(self.inst_bus,'S', bus=self.SourceAdress.GetValue(), **ds)
-        self.atten = gpib_inst.INSTRUMENT(self.inst_bus,'A', bus=self.AttenAdress.GetValue(), **da)
-
+        
+        self.lcin = inst_lock_in.LOCK_IN(self.inst_bus,'L', self.LcinAdress.GetValue())
+        self.meter = inst_meter.METER(self.inst_bus,'M', self.MeterAdress.GetValue())
+        self.source = inst_ch.CLARKE_HESS(self.inst_bus,'S', self.SourceAdress.GetValue())
+        self.atten = inst_attenuator.ATTENUATOR(self.inst_bus,'A', self.AttenAdress.GetValue())
 
     def OnOverideSafety(self, event):
         self.OverideSafety = True
@@ -467,13 +429,11 @@ class GraphFrame(noname.MyFrame1):
             self.MeterAdress.Clear()
             self.SourceAdress.Clear()
             self.AttenAdress.Clear()
-            self.AttenAdress2.Clear()
             for adress in resources:
                 self.LcinAdress.Append(adress)
                 self.MeterAdress.Append(adress)
                 self.SourceAdress.Append(adress)
                 self.AttenAdress.Append(adress)
-                self.AttenAdress2.Append(adress)
 
         except self.inst_bus.VisaIOError:
             resources = "visa error"
@@ -504,9 +464,6 @@ class GraphFrame(noname.MyFrame1):
         elif instrument == 'Attenuator':
             adress = self.AttenAdress.GetValue()
             self.doOnSend(adress)
-        elif instrument == 'Attenuator2':
-            adress = self.AttenAdress2.GetValue()
-            self.doOnSend(adress)
         else:
             self.m_textCtrl23.AppendText('select instrument\n')
 
@@ -536,9 +493,6 @@ class GraphFrame(noname.MyFrame1):
             self.doRead(adress)
         elif instrument == 'Attenuator':
             adress = self.AttenAdress.GetValue()
-            self.doRead(adress)
-        elif instrument == 'Attenuator2':
-            adress = self.AttenAdress2.GetValue()
             self.doRead(adress)
         else:
             self.m_textCtrl23.AppendText('select instrument\n')
