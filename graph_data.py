@@ -47,6 +47,7 @@ class DisplayThread(stuff.WorkerThread):
                 wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, None))
                 return
             else:
+                copy = np.array(copy,dtype=float)
                 data_stdev = np.std(copy)
             
             if xmax_control=='Auto':
@@ -95,7 +96,7 @@ class DisplayThread(stuff.WorkerThread):
                     ymax = 100 #avoids rubbish in box from stopping the plot
 
             panel.axs[index].plot(np.arange(xmin,xmin+len(points),1),points,'r')
-            panel.axs[index].xlabel(labels[index])
+            panel.axs[index].xlabel = labels[index]
             #then window in on what is required...probably inefficient
             #panel.axs[index].set_xbound(lower = xmin, upper = xmax)
             #panel.axs[index].set_ybound(lower = ymin, upper = ymax)
