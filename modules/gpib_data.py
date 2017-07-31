@@ -295,9 +295,9 @@ class GPIBThreadF(stuff.WorkerThread):
                 #Thre real instrument returns something like "0.1,0.0,0", three readings with commas.
                 #If simulated visa is used, only one random float is returned.
                 try:
-                    #x, y, t = tripple_reading.split(",") #For the actual instrument case.
+                    x, y, t = tripple_reading.split(",") #For the actual instrument case.
                     #this line is only used for testing with the virtual visa:
-                    x,y,t = [tripple_reading,tripple_reading,tripple_reading]#For the simulated case.
+                    #x,y,t = [tripple_reading,tripple_reading,tripple_reading]#For the simulated case.
                     self.data.add_multiple([x,y,t]) #Save data triplet into the data list object.
                 except ValueError:
                     self.PrintSave("could not unpack tripple reading: {}, aborting".format(tripple_reading))

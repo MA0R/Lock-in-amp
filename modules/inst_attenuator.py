@@ -11,9 +11,11 @@ class ATTENUATOR(instrument.INSTRUMENT):
         self.inst_bus = inst_bus
         
     def set_atten(self, atten):
+        if 'No' in atten:
+            return [True,None,'No attenuation set']
         try:
             case = int(float(atten))
-        except TypeError:
+        except ValueError:
             return [False,None,'Invalid attenuation {}'.format(atten)]
         if case == 0:
             return self.send("B123\nB567")

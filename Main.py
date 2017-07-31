@@ -10,21 +10,21 @@ import sys
 import time
 import os
 
-import visa2 # this is the simulation version of visa
+import modules.visa2 as visa2 # this is the simulation version of visa
 import visa
 
-import noname #The inherited class for GUI
-import gpib_data #Data collection thread
-import instrument #General instrument class
-import stuff #Extra functions and things that dont have a home yet
-import graph_data #graphing thread
-import pywxgrideditmixin #mixin to allow copy and paste from/to tables
-import tables #For printing tables and stuff
+import modules.noname as noname#The inherited class for GUI
+import modules.gpib_data as gpib_data#Data collection thread
+import modules.instrument as instrument#General instrument class
+import modules.stuff as stuff#Extra functions and things that dont have a home yet
+import modules.graph_data as graph_data#graphing thread
+import modules.pywxgrideditmixin as pywxgrideditmixin#mixin to allow copy and paste from/to tables
+import modules.tables as tables#For printing tables and stuff
 
-import inst_ch
-import inst_lock_in
-import inst_meter
-import inst_attenuator
+import modules.inst_ch as inst_ch
+import modules.inst_lock_in as inst_lock_in
+import modules.inst_meter as inst_meter
+import modules.inst_attenuator as inst_attenuator
 
 class GraphFrame(noname.MyFrame1):
     def __init__(self, parent):
@@ -264,10 +264,10 @@ class GraphFrame(noname.MyFrame1):
         to instrument objects and saves them as class variables.
         """
         
-        self.lcin = inst_lock_in.LOCK_IN(self.inst_bus,'L', self.LcinAdress.GetValue())
-        self.meter = inst_meter.METER(self.inst_bus,'M', self.MeterAdress.GetValue())
-        self.source = inst_ch.CLARKE_HESS(self.inst_bus,'S', self.SourceAdress.GetValue())
-        self.atten = inst_attenuator.ATTENUATOR(self.inst_bus,'A', self.AttenAdress.GetValue())
+        self.lcin = inst_lock_in.LOCK_IN(self.inst_bus, self.LcinAdress.GetValue())
+        self.meter = inst_meter.METER(self.inst_bus, self.MeterAdress.GetValue())
+        self.source = inst_ch.CLARKE_HESS(self.inst_bus, self.SourceAdress.GetValue())
+        self.atten = inst_attenuator.ATTENUATOR(self.inst_bus, self.AttenAdress.GetValue())
 
     def OnOverideSafety(self, event):
         self.OverideSafety = True
