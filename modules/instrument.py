@@ -15,7 +15,7 @@ class INSTRUMENT(object):
         self.measure_seperation = 0
         self.adress = adress
         self.inst_bus = inst_bus #save the instrument bus, either visa or the simulated visa
-        
+        self.no_error = ''
 
     def create_instrument(self):
         """
@@ -68,10 +68,11 @@ class INSTRUMENT(object):
             string = string+str(val)
             sucess = True
         except self.inst_bus.VisaIOError:
-            sucess = True #TO BE REMOVED LATER
+            sucess = False
             string = string+"visa failed"
         return [sucess,val,string]
-
+    #None is ignored by the program, and it lets you know that
+    #a command has been skipped.these functions get overidden in the specific sources.
     def initialise_instrument(self):
         return self.send("None")
 
@@ -92,4 +93,23 @@ class INSTRUMENT(object):
 
     def SingleMsmntSetup(self):
         return self.send("None")
+
+    def check_error(self):
+        """Check that the instruments error matches the no-error case"""
+        #First send the error query command.
+        sucess,val,string = self.query_error()
+        if not sucess: #If it fails, return False (for failure)
+            return [False,None,self.label+' error query unsucessfully sent']
+        #If it suceeded, now read the instrument.
+        sucess,val,string = self.read_instrument()
+        if sucess: #If it was sucesfully, and the no-error was read:
+            if val == self.no_error:
+                #Return True sucess, no value, and a string report.
+                return [True,None,self.label+': '+val+', no error.']
+            else:
+                #Otherwise return false, to signal parent to abort.
+                return [False,None,self.label+': '+val+', error, aborting.']
+
+        else: #If it did not suceed, need to abort.
+            return [False,None,'Unable to read instrument.']
 

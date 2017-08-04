@@ -1,13 +1,14 @@
-"""Specific instrument class for the lock in"""
+"""Specific instrument class for the fluke"""
 import instrument
 
-class CLARKE_HESS(instrument.INSTRUMENT):
+class FLUKE(instrument.INSTRUMENT):
     def __init__(self,inst_bus,adress,label='No label set!'):
         self.label = 'FL'
         self.com_settle_time = 0.1
         self.measure_seperation = 0
         self.adress = adress
         self.inst_bus = inst_bus
+        self.no_error = '0\n'
         
     def initialise_instrument(self):
         command = 'OUT 0V,50HZ;RANGELCK OFF;PHASESFT ON'

@@ -237,7 +237,7 @@ class GraphFrame(noname.MyFrame1):
         Saves using the tables.TABLES object
         """
         #not saving "ranges", this is a specific product
-        self.controlgrid.grid_to_excel(path, [(self.m_grid3, "Control"), (self.m_grid2, "Dict")])
+        self.controlgrid.grid_to_excel(path, [(self.m_grid3, "Control")])
 
     def DoReset(self, event):
         """
@@ -267,6 +267,7 @@ class GraphFrame(noname.MyFrame1):
         self.lcin = inst_lock_in.LOCK_IN(self.inst_bus, self.LcinAdress.GetValue())
         self.meter = inst_meter.METER(self.inst_bus, self.MeterAdress.GetValue())
         self.source = inst_ch.CLARKE_HESS(self.inst_bus, self.SourceAdress.GetValue())
+        #self.source = inst_fl.FLUKE(self.inst_bus, self.SourceAdress.GetValue())
         self.atten = inst_attenuator.ATTENUATOR(self.inst_bus, self.AttenAdress.GetValue())
 
     def OnOverideSafety(self, event):
@@ -316,6 +317,8 @@ class GraphFrame(noname.MyFrame1):
         """
         Flags all threads to stop.
         """
+        if self.worker1:
+            self.worker1.MakeSafe()
         self.doStop() #stop main data gathering
         self.timer0.Stop()#graph timer is stopped
         self.paused = True #graphing is paused

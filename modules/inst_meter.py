@@ -8,6 +8,7 @@ class METER(instrument.INSTRUMENT):
         self.measure_seperation = 0
         self.adress = adress
         self.inst_bus = inst_bus
+        self.no_error = '0\n'
         
     def initialise_instrument(self):
         command = 'END 2; ACV AUTO; AZERO ON;DELAY 0;NPLC 20'
@@ -22,7 +23,7 @@ class METER(instrument.INSTRUMENT):
         return self.send(command)
 
     def reset_instrument(self):
-        command = '*RST'
+        command = 'RESET'
         return self.send(command)
 
     def query_error(self):

@@ -9,6 +9,7 @@ class ATTENUATOR(instrument.INSTRUMENT):
         self.measure_seperation = 0
         self.adress = adress
         self.inst_bus = inst_bus
+        self.no_error = '0\n'
         
     def set_atten(self, atten):
         if 'No' in atten:

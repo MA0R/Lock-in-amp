@@ -9,6 +9,7 @@ class LOCK_IN(instrument.INSTRUMENT):
         self.measure_seperation = 0
         self.adress = adress
         self.inst_bus = inst_bus
+        self.no_error = '0\n'
         
     def initialise_instrument(self):
         command = 'OUTX 1; OVRM 1; OFSL 3; SYNC 1; OFLT 8; FMOD 2\n'

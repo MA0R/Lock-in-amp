@@ -54,7 +54,7 @@ class GPIBThreadF(stuff.WorkerThread):
         self.sr_theta_print = 20
         self.sr_res_mod_print = 21
         self.sr_auto_phas_print = 22
-        
+
         self.OverideSafety = OverideSafety
         self.MadeSafe = False
 
@@ -96,7 +96,17 @@ class GPIBThreadF(stuff.WorkerThread):
         """
         Should force the make safe commands down the GPIB and then quit? Is it even necessary?
         """
-        pass
+        sucessS,valS,stringS = self.source.make_safe()
+        sucessM,valM,stringM = self.meter.make_safe()
+        sucessL,valL,stringL = self.lcin.make_safe()
+        sucessA,valA,stringA = self.atten.make_safe()
+        
+        self.PrintSave("Make safe sent to:")
+        self.PrintSave("Source: {}\nmeter: {}\nlockin: {}\nAttenuator: {}".format(sucessS,sucessM,sucessL,sucessA))
+        if not all([sucessS,sucessM,sucessL,sucessA]):
+            wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, "UNSAFE"))
+        else:
+            wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, None))
 
     def com(self, command,send_item=None):
         """Similar to the refstep com. All commands pass here in the form:
@@ -189,7 +199,18 @@ class GPIBThreadF(stuff.WorkerThread):
             value = self.grid.GetCellValue(row, col)
             return value
         else: return 0
-
+        
+    def wait(self,period):
+        """A simgple loop to wait and also check the abort flag"""
+        self.PrintSave("Waiting for {} seconds".format(period))
+        start_time = time.time()
+        loop = True
+        while loop:
+            if time.time()-start_time >= period:
+                loop = False
+            if self._want_abort:
+                loop = False
+                
     def set_up_lcin(self, row):
         """
         read the reserve and range cells, and send with appropriate packaging
@@ -202,6 +223,7 @@ class GPIBThreadF(stuff.WorkerThread):
             case = self.read_grid_cell(row,self.AutoPhase_col)
             if case == "1":
                 self.com(self.lcin.auto_phase)
+                self.wait(5)
 
     def command(self, row, col):
         """
@@ -228,7 +250,7 @@ class GPIBThreadF(stuff.WorkerThread):
         self.com(self.lcin.reset_instrument) #reset lcin
         self.com(self.source.reset_instrument)
         self.com(self.meter.reset_instrument)
-        time.sleep(3)
+        self.wait(3)
         self.com(self.lcin.initialise_instrument) #initialise the lcin for reading
         self.com(self.meter.initialise_instrument)
         self.com(self.source.initialise_instrument)
@@ -275,6 +297,11 @@ class GPIBThreadF(stuff.WorkerThread):
             self.set_up_lcin(row)
             self.com(self.source.MeasureSetup)
             self.com(self.lcin.MeasureSetup)
+            #Checking the error ensures the lock in is not overloaded or something.
+            #If the lockin's error is not equal to its "self.no_error" (defined in __init__)
+            #Then the virtual instrument returns a sucess value of 'False', which aborts the program.
+            self.com(self.lcin.check_error)
+            
             #arrays for readings of x,y and theta.
             #theta used to verify the correct reading order of x and y?
             #lockin aparantly switches the order of (x,y) randomly.
@@ -290,13 +317,13 @@ class GPIBThreadF(stuff.WorkerThread):
                 #otherwise python crashes, its not a safe stopping of the program.
                 self.com(self.source.SingleMsmntSetup) #?
                 self.com(self.lcin.SingleMsmntSetup)
-                time.sleep(1)
+                self.wait(1)
                 tripple_reading = str(self.com(self.lcin.read_instrument))
-                #Thre real instrument returns something like "0.1,0.0,0", three readings with commas.
+                #Thre real instrument returns something like "0.156,0.0,0", three readings with commas.
                 #If simulated visa is used, only one random float is returned.
                 try:
                     x, y, t = tripple_reading.split(",") #For the actual instrument case.
-                    #this line is only used for testing with the virtual visa:
+                    #this line below is only used for testing with the virtual visa:
                     #x,y,t = [tripple_reading,tripple_reading,tripple_reading]#For the simulated case.
                     self.data.add_multiple([x,y,t]) #Save data triplet into the data list object.
                 except ValueError:
@@ -310,16 +337,19 @@ class GPIBThreadF(stuff.WorkerThread):
                 x_readings.append(float(x))
                 y_readings.append(float(y))
                 t_readings.append(float(t))
-            #printing res_mod twice?
+                
+            #The list of columns below is to match the order of returned values in post_msmnt_query.
             printing_cols = [self.sr_range_print,self.sr_res_mod_print,self.time_const_print,self.sr_auto_phas_print]
             #This is the post reading extra-readings.
             #They can be part of the status comand, but that is not the correct repurposing.
             #would only work because the instrument is capable of returning a list,
-            #This may not always be the case
+            #This may not always be the case. So these commands might need to be split into 4 seperate ones.
             self.com(self.lcin.post_msmnt_query)
             post_msmnt_results = []
-            for col in printing_cols:
-                reading = str(self.com(self.lcin.read_instrument))
+            for col in printing_cols: #Replace new line characters and cr and spaces with empty.
+                reading = str(self.com(self.lcin.read_instrument)).replace('\n','')
+                reading = reading.replace('\r','')
+                reading = reading.replace(' ','')
                 self.set_grid_val(row, col, reading)
                 post_msmnt_results.append(reading)
             
@@ -349,12 +379,11 @@ class GPIBThreadF(stuff.WorkerThread):
             # self.time_const_print = 20
 
             #save a line to the excel fiel
-            line = [time.strftime("%Y.%m.%d.%H.%M.%S, ", time.localtime())]
+            line = [time.strftime("%Y.%m.%d.%H.%M.%S", time.localtime())]
             line = line + [x_avg,x_std,y_avg,y_std,"{},{}".format(t_avg,t_std)]
             line = line + post_msmnt_results
             self.sh.append(line)
+        self.MakeSafe()
         self.wb.save(filename = str(self.raw_file_name+'.xlsx'))
         wx.PostEvent(self._notify_window, stuff.ResultEvent(self.EVT, 'GPIB ended'))
-
-        ####################### END of MEASUREMENT PROCESS #####################
 

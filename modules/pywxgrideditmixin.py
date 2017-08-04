@@ -4,6 +4,8 @@ import wx.grid
 Mixin for wx.grid to implement cut/copy/paste and undo/redo.
 Handlers are in the method Key below.  Other handlers (e.g., menu, toolbar) should call the functions in OnMixinKeypress.
 https://github.com/wleepang/MMFitter/blob/master/pywxgrideditmixin.py
+
+03/07/2017, updated row 78, M. Ben-Shahar, no longer grabs the row and column labels.
 """
 class PyWXGridEditMixin():
     """ A Copy/Paste and undo/redo mixin for wx.grid. Undo/redo is per-table, not yet global."""
@@ -74,7 +76,9 @@ class PyWXGridEditMixin():
         """Copy selected range into clipboard.  If more than one range is selected at a time, only the first is copied"""
         top, left, rows,cols = self.GetSelectionBox()[0]
         
-        data = self.Box2String(top, left, rows, cols, True, True)
+        #data = self.Box2String(top, left, rows, cols, True, True)
+        data = self.Box2String(top, left, rows, cols, False, False)
+
         # Create text data object for use by TheClipboard
         clipboard = wx.TextDataObject()
         clipboard.SetText(data)

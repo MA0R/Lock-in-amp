@@ -265,7 +265,7 @@ class MyFrame1 ( wx.Frame ):
 		
 		self.m_mgr.AddPane( self.m_auinotebook41, wx.aui.AuiPaneInfo() .Left() .CloseButton( False ).MaximizeButton( True ).MinimizeButton( True ).PinButton( True ).Dock().Resizable().FloatingSize( wx.DefaultSize ).MinSize( wx.Size( 200,300 ) ) )
 		
-		self.m_scrolledWindow3 = wx.ScrolledWindow( self.m_auinotebook41, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
+		self.m_scrolledWindow3 = wx.ScrolledWindow( self.m_auinotebook41, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_scrolledWindow3.SetScrollRate( 5, 5 )
 		self.m_scrolledWindow3.SetMinSize( wx.Size( 200,300 ) )
 		
